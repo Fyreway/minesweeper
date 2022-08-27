@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 beryllium = "0.7.6"
+rand = "0.8.5"
