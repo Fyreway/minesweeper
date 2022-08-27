@@ -1,3 +1,4 @@
+use rand::{rngs::ThreadRng, Rng};
 use std::fmt;
 
 enum MapSize {
@@ -39,6 +40,8 @@ impl fmt::Debug for Tile {
 type Coords = (usize, usize);
 
 struct Map {
+    size: MapSize,
+    dim: Coords,
     map: Vec<Vec<Tile>>,
 }
 impl Map {
@@ -49,35 +52,83 @@ impl Map {
             MapSize::Large => (30, 18),
         };
         Self {
+            size,
+            dim: (cols, rows),
             map: vec![vec![Tile::new(Some(0)); cols]; rows],
         }
     }
 
-    fn generate(&mut self) {
-        todo!();
+    fn get_adjacent_tiles(&self, pos: Coords) -> Vec<Coords> {
+        let mut adjacent = vec![];
+        let (col, row) = pos;
+        if col > 0 {
+            if row > 0 {
+                adjacent.push((col - 1, row - 1));
+            }
+            adjacent.push((col - 1, row));
+            if row < self.dim.1 {
+                adjacent.push((col - 1, row + 1));
+            }
+        }
+        if col < self.dim.0 {
+            if row > 0 {
+                adjacent.push((col + 1, row - 1));
+            }
+            adjacent.push((col + 1, row));
+            if row < self.dim.1 {
+                adjacent.push((col + 1, row + 1));
+            }
+        }
+        if row > 0 {
+            adjacent.push((col, row - 1));
+        }
+        if row < self.dim.1 {
+            adjacent.push((col, row + 1));
+        }
+
+        adjacent
     }
 
-    fn mine(&mut self, col: usize, row: usize, prev: &mut Vec<Coords>) -> bool {
+    fn generate_mines(&mut self, rng: &mut ThreadRng) {
+        let num_mines = match self.size {
+            MapSize::Small => 10,
+            MapSize::Normal => 40,
+            MapSize::Large => 99,
+        };
+
+        let (mut rand_col, mut rand_row): Coords;
+
+        for _ in 0..num_mines {
+            loop {
+                rand_col = rng.gen_range(0..self.dim.0);
+                rand_row = rng.gen_range(0..self.dim.1);
+                if !self.map[rand_row][rand_col].is_mine {
+                    break;
+                }
+            }
+
+            self.map[rand_row][rand_col] = Tile::new(None);
+        }
+    }
+
+    fn generate_tiles(&mut self) {
+        for (i, row) in self.map.iter().enumerate() {
+            for (j, tile) in row.iter().enumerate() {}
+        }
+    }
+
+    fn mine(&mut self, pos: Coords, prev: &mut Vec<Coords>) -> bool {
+        let (col, row) = pos;
         let tile = &self.map[row][col];
         if tile.is_mine {
             return true;
         } else if tile.value.unwrap() == 0 {
-            let mut adjacent = vec![
-                (col - 1, row - 1),
-                (col - 1, row),
-                (col - 1, row + 1),
-                (col, row - 1),
-                (col, row + 1),
-                (col + 1, row - 1),
-                (col + 1, row),
-                (col + 1, row + 1),
-            ];
+            let mut adjacent = self.get_adjacent_tiles(pos);
             adjacent.retain(|e| !prev.contains(e));
             for adj in adjacent {
                 let mut copy = prev.clone();
                 copy.push(adj);
-                let (adj_col, adj_row) = adj;
-                self.mine(adj_col, adj_row, &mut copy);
+                self.mine(adj, &mut copy);
             }
         }
 
@@ -98,6 +149,7 @@ impl fmt::Debug for Map {
 }
 
 fn main() {
-    let map = Map::new(MapSize::Normal);
-    println!("Hello, world!");
+    let mut map = Map::new(MapSize::Normal);
+    map.generate_mines(&mut rand::thread_rng());
+    println!("{:?}", map);
 }
