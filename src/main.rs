@@ -12,6 +12,7 @@ struct Tile {
     value: Option<u8>,
     is_mine: bool,
     is_flagged: bool,
+    is_mined: bool,
 }
 impl Tile {
     fn new(value: Option<u8>) -> Self {
@@ -19,6 +20,7 @@ impl Tile {
             value,
             is_mine: value.is_none(),
             is_flagged: false,
+            is_mined: false,
         }
     }
 }
@@ -63,6 +65,14 @@ impl Map {
             None
         } else {
             Some(&self.map[pos.1][pos.0])
+        }
+    }
+
+    fn get_mut(&mut self, pos: Coords) -> Option<&mut Tile> {
+        if pos.0 > self.dim.0 - 1 || pos.1 > self.dim.1 - 1 {
+            None
+        } else {
+            Some(&mut self.map[pos.1][pos.0])
         }
     }
 
@@ -138,8 +148,8 @@ impl Map {
     }
 
     fn mine(&mut self, pos: Coords, prev: &mut Vec<Coords>) -> bool {
-        let (col, row) = pos;
-        let tile = &self.map[row][col];
+        let mut tile = self.get_mut(pos).unwrap();
+        tile.is_mined = true;
         if tile.is_mine {
             return true;
         } else if tile.value.unwrap() == 0 {
@@ -169,7 +179,7 @@ impl fmt::Debug for Map {
 }
 
 fn main() {
-    let mut map = Map::new(MapSize::Normal);
+    let mut map = Map::new(MapSize::Small);
     map.generate_mines(&mut rand::thread_rng());
     map.generate_tiles();
     println!("{:?}", map);
