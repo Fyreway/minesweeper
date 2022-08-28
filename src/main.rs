@@ -1,6 +1,10 @@
 #![allow(dead_code)]
-use sdl2::{event::Event, image::InitFlag};
-use std::{path::PathBuf, time::Duration};
+use sdl2::{
+    event::Event,
+    image::{self, InitFlag},
+    ttf,
+};
+use std::{path::Path, time::Duration};
 
 mod button;
 use button::Button;
@@ -18,7 +22,8 @@ fn generate(size: MapSize) -> Map {
 fn main() {
     let sdl = sdl2::init().expect("Could not start SDL");
     let video = sdl.video().expect("Could not start video subsystem");
-    let _img = sdl2::image::init(InitFlag::PNG).expect("Could not start SDL_image");
+    let _img = image::init(InitFlag::PNG).expect("Could not start SDL_image");
+    let ttf = ttf::init().expect("Could not start SDL_ttf");
     let window = video
         .window("Minesweeper", 800, 600)
         .position_centered()
@@ -30,15 +35,40 @@ fn main() {
         .present_vsync()
         .build()
         .expect("Could not create canvas");
-    let mut tex_creator = canvas.texture_creator();
+    let tex_creator = canvas.texture_creator();
     let mut events = sdl.event_pump().expect("Could not get event pump");
-    let btn = Button::new(
+    let small_btn = Button::new(
         -1,
-        -1,
-        128,
+        300,
+        64,
         5,
-        &mut tex_creator,
-        PathBuf::from("res/button.png"),
+        &tex_creator,
+        &Path::new("res/button.png"),
+        "Small".to_string(),
+        &ttf.load_font("res/font/opensans.ttf", 40)
+            .expect("Could not load font"),
+    );
+    let normal_btn = Button::new(
+        -1,
+        400,
+        64,
+        5,
+        &tex_creator,
+        &Path::new("res/button.png"),
+        "Normal".to_string(),
+        &ttf.load_font("res/font/opensans.ttf", 40)
+            .expect("Could not load font"),
+    );
+    let large_btn = Button::new(
+        -1,
+        500,
+        64,
+        5,
+        &tex_creator,
+        &Path::new("res/button.png"),
+        "Large".to_string(),
+        &ttf.load_font("res/font/opensans.ttf", 40)
+            .expect("Could not load font"),
     );
 
     'gameloop: loop {
@@ -62,7 +92,15 @@ fn main() {
 
         canvas.clear();
 
-        btn.render(&mut canvas).expect("Could not render button");
+        small_btn
+            .render(&mut canvas)
+            .expect("Could not render button");
+        normal_btn
+            .render(&mut canvas)
+            .expect("Could not render button");
+        large_btn
+            .render(&mut canvas)
+            .expect("Could not render button");
 
         canvas.present();
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
