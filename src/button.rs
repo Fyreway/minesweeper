@@ -22,9 +22,19 @@ impl Button<'_> {
         tex_creator: &'a mut TextureCreator<T>,
         file: PathBuf,
     ) -> Button<'a> {
+        let x_ = if x == -1 {
+            ((800 - w * scale) / 2) as _
+        } else {
+            x
+        };
+        let y_ = if y == -1 {
+            ((600 - 16 * scale) / 2) as _
+        } else {
+            y
+        };
         Button {
-            x,
-            y,
+            x: x_,
+            y: y_,
             w,
             scale,
             img: tex_creator
