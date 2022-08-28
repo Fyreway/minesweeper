@@ -41,10 +41,17 @@ impl fmt::Debug for Tile {
 
 type Coords = (usize, usize);
 
+enum GameState {
+    Lose,
+    Playing,
+    Win,
+}
+
 struct Map {
     size: MapSize,
     dim: Coords,
     map: Vec<Vec<Tile>>,
+    lost: bool,
 }
 impl Map {
     fn new(size: MapSize) -> Self {
@@ -57,6 +64,7 @@ impl Map {
             size,
             dim: (cols, rows),
             map: vec![vec![Tile::new(Some(0)); cols]; rows],
+            lost: false,
         }
     }
 
@@ -147,11 +155,11 @@ impl Map {
         }
     }
 
-    fn mine(&mut self, pos: Coords, prev: &mut Vec<Coords>) -> bool {
+    fn mine(&mut self, pos: Coords, prev: &mut Vec<Coords>) {
         let mut tile = self.get_mut(pos).unwrap();
         tile.is_mined = true;
         if tile.is_mine {
-            return true;
+            self.lost = true;
         } else if tile.value.unwrap() == 0 {
             let mut adjacent = self.get_adjacent_tiles(pos);
             adjacent.retain(|e| !prev.contains(e));
@@ -161,8 +169,22 @@ impl Map {
                 self.mine(adj, &mut copy);
             }
         }
+    }
 
-        false
+    fn check_state(&self) -> GameState {
+        if self.lost {
+            return GameState::Lose;
+        }
+
+        for row in self.map.clone() {
+            for tile in row {
+                if !tile.is_mined && !tile.is_mine {
+                    return GameState::Playing;
+                }
+            }
+        }
+
+        GameState::Win
     }
 }
 impl fmt::Debug for Map {
@@ -182,5 +204,19 @@ fn main() {
     let mut map = Map::new(MapSize::Small);
     map.generate_mines(&mut rand::thread_rng());
     map.generate_tiles();
+
+    loop {
+        match map.check_state() {
+            GameState::Win => {
+                // TODO: Display win state
+                break;
+            }
+            GameState::Lose => {
+                // TODO: Display lose state
+                break;
+            }
+            GameState::Playing => {}
+        }
+    }
     println!("{:?}", map);
 }
