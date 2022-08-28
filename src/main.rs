@@ -58,6 +58,14 @@ impl Map {
         }
     }
 
+    fn get(&self, pos: Coords) -> Option<&Tile> {
+        if pos.0 > self.dim.0 - 1 || pos.1 > self.dim.1 - 1 {
+            None
+        } else {
+            Some(&self.map[pos.1][pos.0])
+        }
+    }
+
     fn get_adjacent_tiles(&self, pos: Coords) -> Vec<Coords> {
         let mut adjacent = vec![];
         let (col, row) = pos;
@@ -66,23 +74,23 @@ impl Map {
                 adjacent.push((col - 1, row - 1));
             }
             adjacent.push((col - 1, row));
-            if row < self.dim.1 {
+            if row < self.dim.1 - 1 {
                 adjacent.push((col - 1, row + 1));
             }
         }
-        if col < self.dim.0 {
+        if col < self.dim.0 - 1 {
             if row > 0 {
                 adjacent.push((col + 1, row - 1));
             }
             adjacent.push((col + 1, row));
-            if row < self.dim.1 {
+            if row < self.dim.1 - 1 {
                 adjacent.push((col + 1, row + 1));
             }
         }
         if row > 0 {
             adjacent.push((col, row - 1));
         }
-        if row < self.dim.1 {
+        if row < self.dim.1 - 1 {
             adjacent.push((col, row + 1));
         }
 
@@ -112,8 +120,20 @@ impl Map {
     }
 
     fn generate_tiles(&mut self) {
-        for (i, row) in self.map.iter().enumerate() {
-            for (j, tile) in row.iter().enumerate() {}
+        for (i, row) in self.map.clone().iter().enumerate() {
+            for (j, tile) in row.iter().enumerate() {
+                if tile.is_mine {
+                    continue;
+                }
+                let adjacent = self.get_adjacent_tiles((j, i));
+                let mut mines = 0;
+                for adj in adjacent {
+                    if self.get(adj).unwrap().is_mine {
+                        mines += 1;
+                    }
+                }
+                self.map[i][j].value = Some(mines);
+            }
         }
     }
 
@@ -151,5 +171,6 @@ impl fmt::Debug for Map {
 fn main() {
     let mut map = Map::new(MapSize::Normal);
     map.generate_mines(&mut rand::thread_rng());
+    map.generate_tiles();
     println!("{:?}", map);
 }
