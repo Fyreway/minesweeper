@@ -1,8 +1,11 @@
 #![allow(dead_code)]
 use sdl2::{
     event::Event,
-    image::{self, InitFlag},
-    ttf,
+    image::{self, InitFlag, Sdl2ImageContext},
+    render::{TextureCreator, WindowCanvas},
+    ttf::{self, Sdl2TtfContext},
+    video::WindowContext,
+    EventPump, Sdl, VideoSubsystem,
 };
 use std::{path::Path, time::Duration};
 
@@ -19,60 +22,111 @@ fn generate(size: MapSize) -> Map {
     map
 }
 
+struct Context {
+    sdl: Sdl,
+    video_subsys: VideoSubsystem,
+    image: Sdl2ImageContext,
+    ttf: Sdl2TtfContext,
+    canvas: WindowCanvas,
+    tex_creator: TextureCreator<WindowContext>,
+    event_pump: EventPump,
+}
+impl Context {
+    fn new() -> Self {
+        let sdl = sdl2::init().expect("Could not start SDL");
+        let video_subsys = sdl.video().expect("Could not start video subsystem");
+        let image = image::init(InitFlag::PNG).expect("Could not start SDL_image");
+        let ttf = ttf::init().expect("Could not start SDL_ttf");
+        let win = video_subsys
+            .window("Minesweeper", 800, 600)
+            .position_centered()
+            .build()
+            .expect("Could not create window");
+        let canvas = win
+            .into_canvas()
+            .accelerated()
+            .present_vsync()
+            .build()
+            .expect("Could not create canvas");
+        let tex_creator = canvas.texture_creator();
+        let event_pump = sdl.event_pump().expect("Could not get event pump");
+        Self {
+            sdl,
+            video_subsys,
+            image,
+            ttf,
+            canvas,
+            tex_creator,
+            event_pump,
+        }
+    }
+}
+
+struct MainMenu<'a> {
+    btns: Vec<Button<'a>>,
+}
+impl MainMenu<'_> {
+    fn new<'a>(
+        ttf: &Sdl2TtfContext,
+        tex_creator: &'a TextureCreator<WindowContext>,
+    ) -> MainMenu<'a> {
+        MainMenu {
+            btns: vec![
+                Button::new(
+                    -1,
+                    300,
+                    64,
+                    5,
+                    tex_creator,
+                    &Path::new("res/button.png"),
+                    "Small".to_string(),
+                    &ttf.load_font("res/font/opensans.ttf", 40)
+                        .expect("Could not load font"),
+                ),
+                Button::new(
+                    -1,
+                    400,
+                    64,
+                    5,
+                    tex_creator,
+                    &Path::new("res/button.png"),
+                    "Normal".to_string(),
+                    &ttf.load_font("res/font/opensans.ttf", 40)
+                        .expect("Could not load font"),
+                ),
+                Button::new(
+                    -1,
+                    500,
+                    64,
+                    5,
+                    tex_creator,
+                    &Path::new("res/button.png"),
+                    "Large".to_string(),
+                    &ttf.load_font("res/font/opensans.ttf", 40)
+                        .expect("Could not load font"),
+                ),
+            ],
+        }
+    }
+
+    fn render(&self, canvas: &mut WindowCanvas) {
+        canvas.clear();
+
+        for btn in self.btns.as_slice() {
+            btn.render(canvas).expect("Could not render button");
+        }
+
+        canvas.present();
+    }
+}
+
 fn main() {
-    let sdl = sdl2::init().expect("Could not start SDL");
-    let video = sdl.video().expect("Could not start video subsystem");
-    let _img = image::init(InitFlag::PNG).expect("Could not start SDL_image");
-    let ttf = ttf::init().expect("Could not start SDL_ttf");
-    let window = video
-        .window("Minesweeper", 800, 600)
-        .position_centered()
-        .build()
-        .expect("Could not create window");
-    let mut canvas = window
-        .into_canvas()
-        .accelerated()
-        .present_vsync()
-        .build()
-        .expect("Could not create canvas");
-    let tex_creator = canvas.texture_creator();
-    let mut events = sdl.event_pump().expect("Could not get event pump");
-    let small_btn = Button::new(
-        -1,
-        300,
-        64,
-        5,
-        &tex_creator,
-        &Path::new("res/button.png"),
-        "Small".to_string(),
-        &ttf.load_font("res/font/opensans.ttf", 40)
-            .expect("Could not load font"),
-    );
-    let normal_btn = Button::new(
-        -1,
-        400,
-        64,
-        5,
-        &tex_creator,
-        &Path::new("res/button.png"),
-        "Normal".to_string(),
-        &ttf.load_font("res/font/opensans.ttf", 40)
-            .expect("Could not load font"),
-    );
-    let large_btn = Button::new(
-        -1,
-        500,
-        64,
-        5,
-        &tex_creator,
-        &Path::new("res/button.png"),
-        "Large".to_string(),
-        &ttf.load_font("res/font/opensans.ttf", 40)
-            .expect("Could not load font"),
-    );
+    let mut ctx = Context::new();
+
+    // let main_menu = MainMenu::new(&ctx.ttf, &ctx.tex_creator);
 
     'gameloop: loop {
-        for e in events.poll_iter() {
+        for e in ctx.event_pump.poll_iter() {
             match e {
                 Event::Quit { .. } => break 'gameloop,
                 _ => (),
@@ -90,19 +144,8 @@ fn main() {
         //     GameState::Playing => {}
         // }
 
-        canvas.clear();
+        // main_menu.render(&mut ctx.canvas);
 
-        small_btn
-            .render(&mut canvas)
-            .expect("Could not render button");
-        normal_btn
-            .render(&mut canvas)
-            .expect("Could not render button");
-        large_btn
-            .render(&mut canvas)
-            .expect("Could not render button");
-
-        canvas.present();
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }
 }
