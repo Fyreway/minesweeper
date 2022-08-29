@@ -7,6 +7,7 @@ use sdl2::{
     rect::Rect,
     render::{Texture, TextureCreator, TextureQuery, WindowCanvas},
     ttf::Font,
+    video::WindowContext,
 };
 
 pub struct Button<'a> {
@@ -20,12 +21,12 @@ pub struct Button<'a> {
     text_rect: Rect,
 }
 impl Button<'_> {
-    pub fn new<'a, T: 'a>(
+    pub fn new<'a>(
         x: i32,
         y: i32,
         w: i32,
         scale: i32,
-        tex_creator: &'a TextureCreator<T>,
+        tex_creator: &'a TextureCreator<WindowContext>,
         file: &Path,
         text: String,
         font: &Font,

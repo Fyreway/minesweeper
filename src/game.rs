@@ -1,4 +1,9 @@
 use rand::{rngs::ThreadRng, Rng};
+use sdl2::{
+    rect::Rect,
+    render::{Texture, TextureCreator, WindowCanvas},
+    video::WindowContext,
+};
 use std::fmt;
 
 pub enum MapSize {
@@ -13,15 +18,55 @@ struct Tile {
     is_mine: bool,
     is_flagged: bool,
     is_mined: bool,
+    rect: Rect,
 }
 impl Tile {
-    fn new(value: Option<u8>) -> Self {
-        Self {
+    fn new(value: Option<u8>) -> Tile {
+        Tile {
             value,
             is_mine: value.is_none(),
             is_flagged: false,
             is_mined: false,
+            rect: Rect::new(0, 16, 16, 16),
         }
+    }
+
+    fn set_mine(&mut self) {
+        self.value = None;
+        self.is_mine = true;
+    }
+
+    fn set_value(&mut self, value: u8) {
+        self.is_mine = false;
+        self.value = Some(value);
+    }
+
+    fn mine(&mut self) -> bool {
+        self.is_mined = true;
+        if self.is_mine {
+            self.rect.x = 32;
+            true
+        } else {
+            self.rect.x = 16 * self.value.unwrap() as i32;
+            self.rect.y = 0;
+            false
+        }
+    }
+
+    fn flag(&mut self) -> bool {
+        if !self.is_mined && {
+            self.is_flagged = !self.is_flagged;
+            self.is_flagged
+        } {
+            self.rect.x = 16;
+            false
+        } else {
+            true
+        }
+    }
+
+    fn render(&self, canvas: &mut WindowCanvas, tex: &Texture, x: i32, y: i32) {
+        canvas.copy(tex, self.rect, Rect::new(x, y, 16, 16));
     }
 }
 impl fmt::Debug for Tile {
@@ -52,19 +97,38 @@ pub struct Map {
     dim: Coords,
     map: Vec<Vec<Tile>>,
     lost: bool,
+    mines: u8,
+    flags: u8,
 }
 impl Map {
-    pub fn new(size: MapSize) -> Self {
-        let (cols, rows): (usize, usize) = match size {
+    pub fn new(tex_creator: &TextureCreator<WindowContext>, size: MapSize) -> Map {
+        let dim = match size {
             MapSize::Small => (9, 9),
             MapSize::Normal => (16, 16),
             MapSize::Large => (30, 18),
         };
-        Self {
+        let mines = match size {
+            MapSize::Small => 10,
+            MapSize::Normal => 40,
+            MapSize::Large => 99,
+        };
+        Map {
             size,
-            dim: (cols, rows),
-            map: vec![vec![Tile::new(Some(0)); cols]; rows],
+            dim,
+            map: {
+                let mut map = vec![];
+                for _ in 0..dim.1 {
+                    let mut row = vec![];
+                    for _ in 0..dim.0 {
+                        row.push(Tile::new(Some(0)));
+                    }
+                    map.push(row);
+                }
+                map
+            },
             lost: false,
+            mines,
+            flags: mines,
         }
     }
 
@@ -73,14 +137,6 @@ impl Map {
             None
         } else {
             Some(&self.map[pos.1][pos.0])
-        }
-    }
-
-    fn get_mut(&mut self, pos: Coords) -> Option<&mut Tile> {
-        if pos.0 > self.dim.0 - 1 || pos.1 > self.dim.1 - 1 {
-            None
-        } else {
-            Some(&mut self.map[pos.1][pos.0])
         }
     }
 
@@ -116,15 +172,9 @@ impl Map {
     }
 
     pub fn generate_mines(&mut self, rng: &mut ThreadRng) {
-        let num_mines = match self.size {
-            MapSize::Small => 10,
-            MapSize::Normal => 40,
-            MapSize::Large => 99,
-        };
-
         let (mut rand_col, mut rand_row): Coords;
 
-        for _ in 0..num_mines {
+        for _ in 0..self.mines {
             loop {
                 rand_col = rng.gen_range(0..self.dim.0);
                 rand_row = rng.gen_range(0..self.dim.1);
@@ -133,7 +183,7 @@ impl Map {
                 }
             }
 
-            self.map[rand_row][rand_col] = Tile::new(None);
+            self.map[rand_row][rand_col].set_mine();
         }
     }
 
@@ -156,9 +206,8 @@ impl Map {
     }
 
     pub fn mine(&mut self, pos: Coords, prev: &mut Vec<Coords>) {
-        let mut tile = self.get_mut(pos).unwrap();
-        tile.is_mined = true;
-        if tile.is_mine {
+        let tile = &mut self.map[pos.1][pos.0];
+        if tile.mine() {
             self.lost = true;
         } else if tile.value.unwrap() == 0 {
             let mut adjacent = self.get_adjacent_tiles(pos);
@@ -171,12 +220,23 @@ impl Map {
         }
     }
 
+    pub fn flag(&mut self, pos: Coords) {
+        let tile = &mut self.map[pos.1][pos.0];
+        if self.flags > 0 || tile.is_flagged {
+            if tile.flag() {
+                self.flags += 1;
+            } else {
+                self.flags -= 1;
+            }
+        }
+    }
+
     pub fn check_state(&self) -> GameState {
         if self.lost {
             return GameState::Lose;
         }
 
-        for row in self.map.clone() {
+        for row in self.map.iter() {
             for tile in row {
                 if !tile.is_mined && !tile.is_mine {
                     return GameState::Playing;
@@ -186,10 +246,18 @@ impl Map {
 
         GameState::Win
     }
+
+    pub fn render(&self, canvas: &mut WindowCanvas, tex: &Texture) {
+        for (i, row) in self.map.iter().enumerate() {
+            for (j, tile) in row.iter().enumerate() {
+                tile.render(canvas, tex, (i * 16) as _, (j * 16) as _);
+            }
+        }
+    }
 }
 impl fmt::Debug for Map {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        for row in self.map.clone() {
+        for row in self.map.iter() {
             for tile in row {
                 formatter.write_fmt(format_args!("{:?} ", tile))?;
             }
