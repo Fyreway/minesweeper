@@ -2,6 +2,7 @@
 use sdl2::{
     event::Event,
     image::{self, InitFlag, Sdl2ImageContext},
+    mouse::MouseState,
     render::{TextureCreator, WindowCanvas},
     ttf::{self, Sdl2TtfContext},
     video::WindowContext,
@@ -109,6 +110,16 @@ impl MainMenu<'_> {
         }
     }
 
+    fn handle_clicks(&self, m: &MouseState) {
+        if self.btns[0].is_clicked(m) {
+            println!("Small button clicked");
+        } else if self.btns[1].is_clicked(m) {
+            println!("Normal button clicked");
+        } else if self.btns[2].is_clicked(m) {
+            println!("Large button clicked");
+        }
+    }
+
     fn render(&self, canvas: &mut WindowCanvas) {
         canvas.clear();
 
@@ -120,32 +131,38 @@ impl MainMenu<'_> {
     }
 }
 
-fn main() {
-    let mut ctx = Context::new();
+fn main_menu(ctx: &mut Context) {
+    let main_menu = MainMenu::new(&ctx.ttf, &ctx.tex_creator);
 
-    // let main_menu = MainMenu::new(&ctx.ttf, &ctx.tex_creator);
-
-    'gameloop: loop {
+    'top: loop {
         for e in ctx.event_pump.poll_iter() {
             match e {
-                Event::Quit { .. } => break 'gameloop,
+                Event::Quit { .. } => break 'top,
                 _ => (),
             }
         }
-        // match map.check_state() {
-        //     GameState::Win => {
-        //         // TODO: Display win state
-        //         break 'gameloop;
-        //     }
-        //     GameState::Lose => {
-        //         // TODO: Display lose state
-        //         break 'gameloop;
-        //     }
-        //     GameState::Playing => {}
-        // }
+        let mouse_state = ctx.event_pump.mouse_state();
+        if mouse_state.left() {
+            main_menu.handle_clicks(&mouse_state);
+        }
 
-        // main_menu.render(&mut ctx.canvas);
-
+        main_menu.render(&mut ctx.canvas);
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }
+}
+
+fn main() {
+    let mut ctx = Context::new();
+    main_menu(&mut ctx);
+    // match map.check_state() {
+    //     GameState::Win => {
+    //         // TODO: Display win state
+    //         break 'gameloop;
+    //     }
+    //     GameState::Lose => {
+    //         // TODO: Display lose state
+    //         break 'gameloop;
+    //     }
+    //     GameState::Playing => {}
+    // }
 }

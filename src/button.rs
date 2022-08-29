@@ -2,6 +2,7 @@ use std::path::Path;
 
 use sdl2::{
     image::LoadTexture,
+    mouse::MouseState,
     pixels::Color,
     rect::Rect,
     render::{Texture, TextureCreator, TextureQuery, WindowCanvas},
@@ -106,5 +107,12 @@ impl Button<'_> {
         )?;
 
         canvas.copy(&self.text_tex, None, self.text_rect)
+    }
+
+    pub fn is_clicked(&self, m: &MouseState) -> bool {
+        m.x() > self.x
+            && m.x() < self.x + self.w * self.scale
+            && m.y() > self.y
+            && m.y() < self.y + 16 * self.scale
     }
 }
