@@ -54,27 +54,28 @@ impl MainMenu<'_> {
     }
 
     fn handle_clicks(&self, m: &MouseState) {
-        if self.btns[0].is_clicked(m) {
+        if self.btns[0].inside(m) {
             println!("Small button clicked");
-        } else if self.btns[1].is_clicked(m) {
+        } else if self.btns[1].inside(m) {
             println!("Normal button clicked");
-        } else if self.btns[2].is_clicked(m) {
+        } else if self.btns[2].inside(m) {
             println!("Large button clicked");
         }
     }
 
-    fn render(&self, canvas: &mut WindowCanvas) {
+    fn render(&self, canvas: &mut WindowCanvas) -> Result<(), String> {
         canvas.clear();
 
         for btn in self.btns.as_slice() {
-            btn.render(canvas).expect("Could not render button");
+            btn.render(canvas)?;
         }
 
         canvas.present();
+        Ok(())
     }
 }
 
-pub fn main_menu(ctx: &mut Context) {
+pub fn main_menu(ctx: &mut Context) -> Result<(), String> {
     let main_menu = MainMenu::new(&ctx.ttf, &ctx.tex_creator);
 
     'top: loop {
@@ -89,7 +90,9 @@ pub fn main_menu(ctx: &mut Context) {
             main_menu.handle_clicks(&mouse_state);
         }
 
-        main_menu.render(&mut ctx.canvas);
+        main_menu.render(&mut ctx.canvas)?;
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }
+
+    Ok(())
 }

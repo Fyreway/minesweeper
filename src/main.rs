@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+use std::time::Duration;
+
 use sdl2::{
     event::Event,
     image::{self, InitFlag, LoadTexture, Sdl2ImageContext},
@@ -11,13 +13,12 @@ use sdl2::{
 mod button;
 
 mod game;
-use game::{Map, MapSize};
+use game::{GameState, Map, MapSize};
 
 mod main_menu;
-use main_menu::main_menu;
 
-fn generate(tex_creator: &TextureCreator<WindowContext>, size: MapSize) -> Map {
-    let mut map = Map::new(tex_creator, size);
+fn generate(size: MapSize) -> Map {
+    let mut map = Map::new(size);
     map.generate_mines(&mut rand::thread_rng());
     map.generate_tiles();
     map
@@ -33,25 +34,25 @@ pub struct Context {
     event_pump: EventPump,
 }
 impl Context {
-    fn new() -> Self {
-        let sdl = sdl2::init().expect("Could not start SDL");
-        let video_subsys = sdl.video().expect("Could not start video subsystem");
-        let image = image::init(InitFlag::PNG).expect("Could not start SDL_image");
-        let ttf = ttf::init().expect("Could not start SDL_ttf");
+    fn new() -> Result<Self, String> {
+        let sdl = sdl2::init()?;
+        let video_subsys = sdl.video()?;
+        let image = image::init(InitFlag::PNG)?;
+        let ttf = ttf::init().map_err(|e| e.to_string())?;
         let win = video_subsys
             .window("Minesweeper", 800, 600)
             .position_centered()
             .build()
-            .expect("Could not create window");
+            .map_err(|e| e.to_string())?;
         let canvas = win
             .into_canvas()
             .accelerated()
             .present_vsync()
             .build()
-            .expect("Could not create canvas");
+            .map_err(|e| e.to_string())?;
         let tex_creator = canvas.texture_creator();
-        let event_pump = sdl.event_pump().expect("Could not get event pump");
-        Self {
+        let event_pump = sdl.event_pump()?;
+        Ok(Self {
             sdl,
             video_subsys,
             image,
@@ -59,18 +60,15 @@ impl Context {
             canvas,
             tex_creator,
             event_pump,
-        }
+        })
     }
 }
 
-fn main() {
-    let mut ctx = Context::new();
-    let tex = ctx
-        .tex_creator
-        .load_texture("res/spritesheet.png")
-        .expect("Could not load spritesheet");
-    // main_menu(&mut ctx);
-    let mut map = generate(&ctx.tex_creator, MapSize::Normal);
+fn main() -> Result<(), String> {
+    let mut ctx = Context::new()?;
+    let tex = ctx.tex_creator.load_texture("res/spritesheet.png")?;
+    // main_menu(&mut ctx)?;
+    let mut map = generate(MapSize::Normal);
     'gameloop: loop {
         for e in ctx.event_pump.poll_iter() {
             match e {
@@ -78,8 +76,29 @@ fn main() {
                 _ => (),
             }
         }
+        let mouse_state = ctx.event_pump.mouse_state();
+        if mouse_state.left() {
+            if let Some(tile) = map.inside(&mouse_state) {
+                map.mine(tile, &mut Vec::new());
+            }
+        } else if mouse_state.right() {
+            if let Some(tile) = map.inside(&mouse_state) {
+                map.flag(tile);
+            }
+        }
+
+        match map.check_state() {
+            GameState::Win => todo!(),
+            GameState::Lose => todo!(),
+            GameState::Playing => (),
+        }
+
         ctx.canvas.clear();
-        map.render(&mut ctx.canvas, &tex);
+        map.render(&mut ctx.canvas, &tex)?;
         ctx.canvas.present();
+
+        std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }
+
+    Ok(())
 }

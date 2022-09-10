@@ -1,10 +1,10 @@
 use rand::{rngs::ThreadRng, Rng};
 use sdl2::{
+    mouse::MouseState,
     rect::Rect,
-    render::{Texture, TextureCreator, WindowCanvas},
-    video::WindowContext,
+    render::{Texture, WindowCanvas},
 };
-use std::fmt;
+// use std::fmt;
 
 pub enum MapSize {
     Small,
@@ -65,26 +65,32 @@ impl Tile {
         }
     }
 
-    fn render(&self, canvas: &mut WindowCanvas, tex: &Texture, x: i32, y: i32) {
-        canvas.copy(tex, self.rect, Rect::new(x, y, 16, 16));
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        tex: &Texture,
+        x: i32,
+        y: i32,
+    ) -> Result<(), String> {
+        canvas.copy(tex, self.rect, Rect::new(x, y, 16, 16))
     }
 }
-impl fmt::Debug for Tile {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_fmt(format_args!(
-            "{}",
-            if self.is_mine {
-                "M".to_string()
-            } else if self.is_flagged {
-                "F".to_string()
-            } else {
-                self.value.unwrap().to_string()
-            }
-        ))
-    }
-}
+// impl fmt::Debug for Tile {
+//     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+//         formatter.write_fmt(format_args!(
+//             "{}",
+//             if self.is_mine {
+//                 "M".to_string()
+//             } else if self.is_flagged {
+//                 "F".to_string()
+//             } else {
+//                 self.value.unwrap().to_string()
+//             }
+//         ))
+//     }
+// }
 
-pub type Coords = (usize, usize);
+pub type Coords<T> = (T, T);
 
 pub enum GameState {
     Lose,
@@ -94,14 +100,14 @@ pub enum GameState {
 
 pub struct Map {
     size: MapSize,
-    dim: Coords,
+    dim: Coords<usize>,
     map: Vec<Vec<Tile>>,
     lost: bool,
     mines: u8,
     flags: u8,
 }
 impl Map {
-    pub fn new(tex_creator: &TextureCreator<WindowContext>, size: MapSize) -> Map {
+    pub fn new(size: MapSize) -> Map {
         let dim = match size {
             MapSize::Small => (9, 9),
             MapSize::Normal => (16, 16),
@@ -132,15 +138,15 @@ impl Map {
         }
     }
 
-    fn get(&self, pos: Coords) -> Option<&Tile> {
+    fn get(&self, pos: Coords<usize>) -> Option<&Tile> {
         if pos.0 > self.dim.0 - 1 || pos.1 > self.dim.1 - 1 {
             None
         } else {
-            Some(&self.map[pos.1][pos.0])
+            Some(&self.map[pos.1 as usize][pos.0 as usize])
         }
     }
 
-    fn get_adjacent_tiles(&self, pos: Coords) -> Vec<Coords> {
+    fn get_adjacent_tiles(&self, pos: Coords<usize>) -> Vec<Coords<usize>> {
         let mut adjacent = vec![];
         let (col, row) = pos;
         if col > 0 {
@@ -172,13 +178,13 @@ impl Map {
     }
 
     pub fn generate_mines(&mut self, rng: &mut ThreadRng) {
-        let (mut rand_col, mut rand_row): Coords;
+        let (mut rand_col, mut rand_row): Coords<usize>;
 
         for _ in 0..self.mines {
             loop {
                 rand_col = rng.gen_range(0..self.dim.0);
                 rand_row = rng.gen_range(0..self.dim.1);
-                if !self.map[rand_row][rand_col].is_mine {
+                if !self.get((rand_col, rand_row)).unwrap().is_mine {
                     break;
                 }
             }
@@ -205,8 +211,11 @@ impl Map {
         }
     }
 
-    pub fn mine(&mut self, pos: Coords, prev: &mut Vec<Coords>) {
+    pub fn mine(&mut self, pos: Coords<usize>, prev: &mut Vec<Coords<usize>>) {
         let tile = &mut self.map[pos.1][pos.0];
+        if tile.is_mined || tile.is_flagged {
+            return;
+        }
         if tile.mine() {
             self.lost = true;
         } else if tile.value.unwrap() == 0 {
@@ -220,8 +229,11 @@ impl Map {
         }
     }
 
-    pub fn flag(&mut self, pos: Coords) {
+    pub fn flag(&mut self, pos: Coords<usize>) {
         let tile = &mut self.map[pos.1][pos.0];
+        if tile.is_mined {
+            return;
+        }
         if self.flags > 0 || tile.is_flagged {
             if tile.flag() {
                 self.flags += 1;
@@ -247,23 +259,33 @@ impl Map {
         GameState::Win
     }
 
-    pub fn render(&self, canvas: &mut WindowCanvas, tex: &Texture) {
+    pub fn render(&self, canvas: &mut WindowCanvas, tex: &Texture) -> Result<(), String> {
         for (i, row) in self.map.iter().enumerate() {
             for (j, tile) in row.iter().enumerate() {
-                tile.render(canvas, tex, (i * 16) as _, (j * 16) as _);
+                tile.render(canvas, tex, (i * 16) as _, (j * 16) as _)?;
             }
-        }
-    }
-}
-impl fmt::Debug for Map {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        for row in self.map.iter() {
-            for tile in row {
-                formatter.write_fmt(format_args!("{:?} ", tile))?;
-            }
-            formatter.write_str("\n")?;
         }
 
         Ok(())
     }
+
+    pub fn inside(&self, m: &MouseState) -> Option<Coords<usize>> {
+        if (m.x() as usize) > self.dim.0 * 16 || (m.y() as usize) > self.dim.1 * 16 {
+            None
+        } else {
+            Some((m.y() as usize / 16, m.x() as usize / 16))
+        }
+    }
 }
+// impl fmt::Debug for Map {
+//     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+//         for row in self.map.iter() {
+//             for tile in row {
+//                 formatter.write_fmt(format_args!("{:?} ", tile))?;
+//             }
+//             formatter.write_str("\n")?;
+//         }
+
+//         Ok(())
+//     }
+// }

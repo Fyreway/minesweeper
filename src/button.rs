@@ -110,7 +110,7 @@ impl Button<'_> {
         canvas.copy(&self.text_tex, None, self.text_rect)
     }
 
-    pub fn is_clicked(&self, m: &MouseState) -> bool {
+    pub fn inside(&self, m: &MouseState) -> bool {
         m.x() > self.x
             && m.x() < self.x + self.w * self.scale
             && m.y() > self.y
