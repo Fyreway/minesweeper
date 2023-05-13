@@ -1,5 +1,4 @@
-use std::path::Path;
-
+use resource::resource;
 use sdl2::{
     image::LoadTexture,
     mouse::MouseState,
@@ -30,7 +29,6 @@ impl Button<'_> {
         w: i32,
         scale: i32,
         tex_creator: &'a TextureCreator<WindowContext>,
-        file: &Path,
         text: &str,
         font: &Font,
     ) -> Button<'a> {
@@ -59,7 +57,7 @@ impl Button<'_> {
             w,
             scale,
             img: tex_creator
-                .load_texture(file)
+                .load_texture_bytes(&resource!("res/button.png"))
                 .expect("Could not load image"),
             text_tex,
             text_rect: Rect::new(

@@ -9,11 +9,11 @@ use super::{button::Button, text::Text};
 
 #[macro_export]
 macro_rules! buttons {
-    [{scale: $scale:expr, path: $path:expr, tex_creator: $tex_creator:expr, font: $font:expr}: $( ($x:expr, $y:expr, $w:expr) : $text:expr ),*] => {
+    [{scale: $scale:expr, tex_creator: $tex_creator:expr, font: $font:expr}: $( ($x:expr, $y:expr, $w:expr) : $text:expr ),*] => {
         {
             vec![
                 $(
-                    Button::new($x, $y, $w, $scale, $tex_creator, std::path::Path::new($path), $text, $font)
+                    Button::new($x, $y, $w, $scale, $tex_creator, $text, $font)
                 ),*
             ]
         }

@@ -1,9 +1,12 @@
 use std::time::Duration;
 
+use resource::resource;
+
 use sdl2::{
     event::Event,
     mouse::MouseState,
     render::{TextureCreator, WindowCanvas},
+    rwops::RWops,
     ttf::{FontStyle, Sdl2TtfContext},
     video::WindowContext,
     EventPump,
@@ -47,14 +50,14 @@ pub fn end_menu(
     event_pump: &mut EventPump,
     canvas: &mut WindowCanvas,
 ) -> Result<Option<EndMenuClickStatus>, String> {
-    let small_font = ttf.load_font("res/font/opensans.ttf", 40)?;
-    let mut title_font = ttf.load_font("res/font/opensans.ttf", 500)?;
+    let res = resource!("res/font/opensans.ttf");
+    let small_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
+    let mut title_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 500)?;
     title_font.set_style(FontStyle::BOLD);
     let mut main_menu = Menu::<EndMenuHandler>::new(
         buttons![
             {
                 scale: 5,
-                path: "res/button.png",
                 tex_creator: tex_creator,
                 font: &small_font
             }:

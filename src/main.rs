@@ -6,11 +6,13 @@ use game::{
     tile::TILE_SIZE,
     GameState,
 };
+use resource::resource;
 use sdl2::{
     event::Event,
     image::LoadTexture,
     mouse::MouseButton,
     render::TextureCreator,
+    rwops::RWops,
     ttf::Font,
     video::{WindowContext, WindowPos},
 };
@@ -36,7 +38,8 @@ fn generate<'a>(
 
 fn run() -> Result<bool, String> {
     let mut ctx = Context::new()?;
-    let font = ctx.ttf.load_font("res/font/opensans.ttf", 40)?;
+    let res = resource!("res/font/opensans.ttf");
+    let font = ctx.ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
     let mut map;
     if let Some(status) = main_menu(
         &ctx.tex_creator,
@@ -71,7 +74,9 @@ fn run() -> Result<bool, String> {
         return Ok(true);
     }
 
-    let tex = ctx.tex_creator.load_texture("res/spritesheet.png")?;
+    let tex = ctx
+        .tex_creator
+        .load_texture_bytes(&resource!("res/spritesheet.png"))?;
     let mut state = GameState::Playing;
     'gameloop: loop {
         for e in ctx.event_pump.poll_iter() {
