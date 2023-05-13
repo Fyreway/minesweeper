@@ -10,6 +10,8 @@ use sdl2::{
     video::WindowContext,
 };
 
+use super::POS_CENTERED;
+
 pub struct Button<'a> {
     x: i32,
     y: i32,
@@ -20,7 +22,9 @@ pub struct Button<'a> {
     text_tex: Texture<'a>,
     text_rect: Rect,
 }
+
 impl Button<'_> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new<'a>(
         x: i32,
         y: i32,
@@ -28,21 +32,21 @@ impl Button<'_> {
         scale: i32,
         tex_creator: &'a TextureCreator<WindowContext>,
         file: &Path,
-        text: String,
+        text: &str,
         font: &Font,
     ) -> Button<'a> {
-        let x_ = if x == -1 {
+        let x_ = if x == POS_CENTERED {
             ((800 - w * scale) / 2) as _
         } else {
             x
         };
-        let y_ = if y == -1 {
+        let y_ = if y == POS_CENTERED {
             ((600 - 16 * scale) / 2) as _
         } else {
             y
         };
         let text_surf = font
-            .render(text.as_str())
+            .render(text)
             .solid(Color::WHITE)
             .expect("Could not get text surface");
         let text_tex = tex_creator
@@ -58,7 +62,7 @@ impl Button<'_> {
             img: tex_creator
                 .load_texture(file)
                 .expect("Could not load image"),
-            text,
+            text: text.to_string(),
             text_tex,
             text_rect: Rect::new(
                 x_ + (w * scale - text_width) / 2,

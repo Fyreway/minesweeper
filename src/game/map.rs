@@ -1,10 +1,16 @@
 use rand::{rngs::ThreadRng, Rng};
 use sdl2::{
-    mouse::MouseState,
-    rect::Rect,
-    render::{Texture, WindowCanvas},
+    render::{Texture, TextureCreator, WindowCanvas},
+    ttf::Font,
+    video::WindowContext,
 };
-// use std::fmt;
+
+use crate::ui::text::Text;
+
+use super::{
+    tile::{Tile, TILE_SIZE},
+    Coords, GameState,
+};
 
 pub enum MapSize {
     Small,
@@ -12,106 +18,26 @@ pub enum MapSize {
     Large,
 }
 
-#[derive(Clone)]
-struct Tile {
-    value: Option<u8>,
-    is_mine: bool,
-    is_flagged: bool,
-    is_mined: bool,
-    rect: Rect,
-}
-impl Tile {
-    fn new(value: Option<u8>) -> Tile {
-        Tile {
-            value,
-            is_mine: value.is_none(),
-            is_flagged: false,
-            is_mined: false,
-            rect: Rect::new(0, 16, 16, 16),
-        }
-    }
-
-    fn set_mine(&mut self) {
-        self.value = None;
-        self.is_mine = true;
-    }
-
-    fn set_value(&mut self, value: u8) {
-        self.is_mine = false;
-        self.value = Some(value);
-    }
-
-    fn mine(&mut self) -> bool {
-        self.is_mined = true;
-        if self.is_mine {
-            self.rect.x = 32;
-            true
-        } else {
-            self.rect.x = 16 * self.value.unwrap() as i32;
-            self.rect.y = 0;
-            false
-        }
-    }
-
-    fn flag(&mut self) -> bool {
-        if !self.is_mined && {
-            self.is_flagged = !self.is_flagged;
-            self.is_flagged
-        } {
-            self.rect.x = 16;
-            false
-        } else {
-            true
-        }
-    }
-
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        tex: &Texture,
-        x: i32,
-        y: i32,
-    ) -> Result<(), String> {
-        canvas.copy(tex, self.rect, Rect::new(x, y, 16, 16))
-    }
-}
-// impl fmt::Debug for Tile {
-//     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-//         formatter.write_fmt(format_args!(
-//             "{}",
-//             if self.is_mine {
-//                 "M".to_string()
-//             } else if self.is_flagged {
-//                 "F".to_string()
-//             } else {
-//                 self.value.unwrap().to_string()
-//             }
-//         ))
-//     }
-// }
-
-pub type Coords<T> = (T, T);
-
-pub enum GameState {
-    Lose,
-    Playing,
-    Win,
-}
-
-pub struct Map {
+pub struct Map<'a> {
     size: MapSize,
     dim: Coords<usize>,
     map: Vec<Vec<Tile>>,
     lost: bool,
     mines: u8,
     flags: u8,
+    flags_text: Text<'a>,
 }
-impl Map {
-    pub fn new(size: MapSize) -> Map {
+
+impl<'a> Map<'a> {
+    pub fn new(
+        size: MapSize,
+        tex_creator: &'a TextureCreator<WindowContext>,
+        font: &'a Font,
+    ) -> Map<'a> {
         let dim = match size {
             MapSize::Small => (9, 9),
             MapSize::Normal => (16, 16),
-            MapSize::Large => (30, 18),
+            MapSize::Large => (18, 30),
         };
         let mines = match size {
             MapSize::Small => 10,
@@ -135,6 +61,7 @@ impl Map {
             lost: false,
             mines,
             flags: mines,
+            flags_text: Text::new(0, -10, 3, tex_creator, &format!("Flags: {mines}"), font),
         }
     }
 
@@ -142,7 +69,7 @@ impl Map {
         if pos.0 > self.dim.0 - 1 || pos.1 > self.dim.1 - 1 {
             None
         } else {
-            Some(&self.map[pos.1 as usize][pos.0 as usize])
+            Some(&self.map[pos.1][pos.0])
         }
     }
 
@@ -211,7 +138,7 @@ impl Map {
         }
     }
 
-    pub fn mine(&mut self, pos: Coords<usize>, prev: &mut Vec<Coords<usize>>) {
+    pub fn mine(&mut self, pos: Coords<usize>, prev: &mut [Coords<usize>]) {
         let tile = &mut self.map[pos.1][pos.0];
         if tile.is_mined || tile.is_flagged {
             return;
@@ -222,7 +149,7 @@ impl Map {
             let mut adjacent = self.get_adjacent_tiles(pos);
             adjacent.retain(|e| !prev.contains(e));
             for adj in adjacent {
-                let mut copy = prev.clone();
+                let mut copy = prev.to_owned();
                 copy.push(adj);
                 self.mine(adj, &mut copy);
             }
@@ -235,10 +162,13 @@ impl Map {
             return;
         }
         if self.flags > 0 || tile.is_flagged {
-            if tile.flag() {
-                self.flags += 1;
-            } else {
-                self.flags -= 1;
+            if let Some(flagged) = tile.flag() {
+                if flagged {
+                    self.flags += 1;
+                } else {
+                    self.flags -= 1;
+                }
+                self.flags_text.set_text(&format!("Flags: {}", self.flags));
             }
         }
     }
@@ -259,33 +189,34 @@ impl Map {
         GameState::Win
     }
 
-    pub fn render(&self, canvas: &mut WindowCanvas, tex: &Texture) -> Result<(), String> {
+    pub fn render(
+        &mut self,
+        canvas: &mut WindowCanvas,
+        tex: &Texture,
+        font: &Font,
+        tex_creator: &'a TextureCreator<WindowContext>,
+    ) -> Result<(), String> {
         for (i, row) in self.map.iter().enumerate() {
             for (j, tile) in row.iter().enumerate() {
-                tile.render(canvas, tex, (i * 16) as _, (j * 16) as _)?;
+                tile.render(
+                    canvas,
+                    tex,
+                    (i * TILE_SIZE as usize) as _,
+                    (j * TILE_SIZE as usize) as _,
+                )?;
             }
         }
 
-        Ok(())
+        self.flags_text.render(canvas, font, tex_creator)
     }
 
-    pub fn inside(&self, m: &MouseState) -> Option<Coords<usize>> {
-        if (m.x() as usize) > self.dim.0 * 16 || (m.y() as usize) > self.dim.1 * 16 {
+    pub fn inside(&self, x: i32, y: i32) -> Option<Coords<usize>> {
+        if (x as usize) > self.dim.1 * TILE_SIZE as usize
+            || (y as usize) > self.dim.0 * TILE_SIZE as usize
+        {
             None
         } else {
-            Some((m.y() as usize / 16, m.x() as usize / 16))
+            Some(((y / TILE_SIZE) as usize, (x / TILE_SIZE) as usize))
         }
     }
 }
-// impl fmt::Debug for Map {
-//     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-//         for row in self.map.iter() {
-//             for tile in row {
-//                 formatter.write_fmt(format_args!("{:?} ", tile))?;
-//             }
-//             formatter.write_str("\n")?;
-//         }
-
-//         Ok(())
-//     }
-// }
