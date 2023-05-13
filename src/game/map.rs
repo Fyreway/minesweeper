@@ -140,10 +140,19 @@ impl<'a> Map<'a> {
 
     pub fn mine(&mut self, pos: Coords<i32>, prev: &mut [Coords<i32>]) {
         let tile = &mut self.map[usize::try_from(pos.1).unwrap()][usize::try_from(pos.0).unwrap()];
-        if tile.is_mined || tile.is_flagged {
-            return;
-        }
-        if tile.mine() {
+        if tile.is_flagged {
+        } else if tile.is_mined {
+            let adjacent = self.get_adjacent_tiles(pos);
+            let (flags, non_flags): (Vec<Coords<i32>>, Vec<Coords<i32>>) = adjacent
+                .iter()
+                .filter(|&&e| !self.get(e).unwrap().is_mined)
+                .partition(|&&e| self.get(e).unwrap().is_flagged);
+            if u8::try_from(flags.len()).unwrap() == self.get(pos).unwrap().value.unwrap() {
+                for t in non_flags {
+                    self.mine(t, &mut []);
+                }
+            }
+        } else if tile.mine() {
             self.lost = true;
         } else if tile.value.unwrap() == 0 {
             let mut adjacent = self.get_adjacent_tiles(pos);
