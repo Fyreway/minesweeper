@@ -21,7 +21,7 @@ macro_rules! buttons {
 
 #[macro_export]
 macro_rules! texts {
-    [{scale: $scale:expr, tex_creator: $tex_creator:expr, font: $font:expr}: $( ($x:expr, $y:expr) : $text:expr ),*] => {
+    [{tex_creator: $tex_creator:expr, font: $font:expr}: $( ($x:expr, $y:expr, $scale:expr) : $text:expr ),*] => {
         {
             vec![
                 $(

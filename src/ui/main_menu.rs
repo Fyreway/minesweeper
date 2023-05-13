@@ -5,7 +5,7 @@ use sdl2::{
     mouse::MouseButton,
     render::{TextureCreator, WindowCanvas},
     rwops::RWops,
-    ttf::{FontStyle, Sdl2TtfContext},
+    ttf::Sdl2TtfContext,
     video::WindowContext,
     EventPump,
 };
@@ -53,15 +53,13 @@ pub fn main_menu(
     canvas: &mut WindowCanvas,
 ) -> Result<Option<ClickStatus>, String> {
     let res = resource!("res/font/opensans.ttf");
-    let small_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
-    let mut title_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 500)?;
-    title_font.set_style(FontStyle::BOLD);
+    let font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
     let mut main_menu = Menu::<MainMenuHandler>::new(
         buttons![
             {
                 scale: 5,
                 tex_creator: tex_creator,
-                font: &small_font
+                font: &font
             }:
             (POS_CENTERED, 300, 64) : "Small",
             (POS_CENTERED, 400, 64) : "Normal",
@@ -70,11 +68,11 @@ pub fn main_menu(
         ],
         texts![
             {
-                scale: 15,
                 tex_creator: tex_creator,
-                font: &title_font
+                font: &font
             }:
-            (POS_CENTERED, 50) : "MINESWEEPER"
+            (POS_CENTERED, 50, 15) : "MINESWEEPER",
+            (5, 552, 3) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
         ],
         (800, 600),
     );
@@ -97,7 +95,7 @@ pub fn main_menu(
             }
         }
 
-        main_menu.render(canvas, &small_font, tex_creator)?;
+        main_menu.render(canvas, &font, tex_creator)?;
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }
 

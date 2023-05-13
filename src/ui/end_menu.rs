@@ -22,7 +22,7 @@ use super::{
 };
 
 pub enum ClickStatus {
-    Continue,
+    Menu,
     Exit,
 }
 
@@ -34,7 +34,7 @@ impl ClickHandler for EndMenuHandler {
 
     fn handle_clicks(btns: &[Button<'_>], x: i32, y: i32) -> Option<Self::Type> {
         if btns[0].inside(x, y) {
-            Some(ClickStatus::Continue)
+            Some(ClickStatus::Menu)
         } else if btns[1].inside(x, y) {
             Some(ClickStatus::Exit)
         } else {
@@ -61,16 +61,15 @@ pub fn end_menu(
                 tex_creator: tex_creator,
                 font: &small_font
             }:
-            (POS_CENTERED, 300, 64) : "Continue",
+            (POS_CENTERED, 300, 64) : "Menu",
             (POS_CENTERED, 400, 64) : "Exit"
         ],
         texts![
             {
-                scale: 15,
                 tex_creator: tex_creator,
                 font: &title_font
             }:
-            (POS_CENTERED, 50) : if let Stage::Lose = state {"You Lose!"} else {"You Win!"}
+            (POS_CENTERED, 50, 15) : if let Stage::Lose = state {"You Lose!"} else {"You Win!"}
         ],
         (800, 500),
     );

@@ -113,7 +113,7 @@ fn run() -> Result<bool, String> {
         &mut ctx.canvas,
     )? {
         match status {
-            end_menu::ClickStatus::Continue => return Ok(false),
+            end_menu::ClickStatus::Menu => return Ok(false),
             end_menu::ClickStatus::Exit => return Ok(true),
         }
     }
