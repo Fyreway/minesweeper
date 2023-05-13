@@ -2,7 +2,7 @@ use resource::resource;
 
 use sdl2::{
     event::Event,
-    mouse::MouseState,
+    mouse::MouseButton,
     render::{TextureCreator, WindowCanvas},
     rwops::RWops,
     ttf::{FontStyle, Sdl2TtfContext},
@@ -18,7 +18,7 @@ use crate::{
 
 use super::menu::{ClickHandler, Menu};
 
-pub enum MainMenuClickStatus {
+pub enum ClickStatus {
     Small,
     Normal,
     Large,
@@ -29,15 +29,15 @@ pub enum MainMenuClickStatus {
 struct MainMenuHandler {}
 
 impl ClickHandler for MainMenuHandler {
-    type Type = MainMenuClickStatus;
+    type Type = ClickStatus;
 
-    fn handle_clicks(btns: &[Button<'_>], m: &MouseState) -> Option<Self::Type> {
-        if btns[0].inside(m) {
-            Some(MainMenuClickStatus::Small)
-        } else if btns[1].inside(m) {
-            Some(MainMenuClickStatus::Normal)
-        } else if btns[2].inside(m) {
-            Some(MainMenuClickStatus::Large)
+    fn handle_clicks(btns: &[Button<'_>], x: i32, y: i32) -> Option<Self::Type> {
+        if btns[0].inside(x, y) {
+            Some(ClickStatus::Small)
+        } else if btns[1].inside(x, y) {
+            Some(ClickStatus::Normal)
+        } else if btns[2].inside(x, y) {
+            Some(ClickStatus::Large)
         // } else if btns[3].inside(m) {
         //     Some(MainMenuClickStatus::Custom)
         } else {
@@ -51,7 +51,7 @@ pub fn main_menu(
     ttf: &Sdl2TtfContext,
     event_pump: &mut EventPump,
     canvas: &mut WindowCanvas,
-) -> Result<Option<MainMenuClickStatus>, String> {
+) -> Result<Option<ClickStatus>, String> {
     let res = resource!("res/font/opensans.ttf");
     let small_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
     let mut title_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 500)?;
@@ -81,14 +81,19 @@ pub fn main_menu(
 
     'top: loop {
         for e in event_pump.poll_iter() {
-            if let Event::Quit { .. } = e {
-                break 'top;
-            }
-        }
-        let mouse_state = event_pump.mouse_state();
-        if mouse_state.left() {
-            if let Some(status) = main_menu.handle_clicks(&mouse_state) {
-                return Ok(Some(status));
+            match e {
+                Event::Quit { .. } => break 'top,
+                Event::MouseButtonDown {
+                    mouse_btn: MouseButton::Left,
+                    x,
+                    y,
+                    ..
+                } => {
+                    if let Some(status) = main_menu.handle_clicks(x, y) {
+                        return Ok(Some(status));
+                    }
+                }
+                _ => (),
             }
         }
 

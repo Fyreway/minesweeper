@@ -32,7 +32,7 @@ impl<'a> Text<'a> {
             .create_texture_from_surface(&text_surf)
             .expect("Could not get text texture");
         let TextureQuery { width, height, .. } = text_tex.query();
-        let text_width = width as i32 * 8 * scale / height as i32;
+        let text_width = i32::try_from(width).unwrap() * 8 * scale / i32::try_from(height).unwrap();
         let x_ = if x == POS_CENTERED {
             ((800 - text_width) / 2) as _
         } else {
@@ -51,8 +51,8 @@ impl<'a> Text<'a> {
             text_rect: Rect::new(
                 x_,
                 y_ + (16 * scale) / 4,
-                text_width as _,
-                ((16 * scale) / 2) as _,
+                u32::try_from(text_width).unwrap(),
+                u32::try_from(16 * scale / 2).unwrap(),
             ),
         }
     }

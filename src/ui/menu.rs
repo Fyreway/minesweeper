@@ -1,5 +1,4 @@
 use sdl2::{
-    mouse::MouseState,
     render::{TextureCreator, WindowCanvas},
     ttf::Font,
     video::{WindowContext, WindowPos},
@@ -35,7 +34,7 @@ macro_rules! texts {
 
 pub trait ClickHandler: Default {
     type Type;
-    fn handle_clicks(btns: &[Button<'_>], m: &MouseState) -> Option<Self::Type>;
+    fn handle_clicks(btns: &[Button<'_>], x: i32, y: i32) -> Option<Self::Type>;
 }
 
 pub struct Menu<'a, C: ClickHandler> {
@@ -55,8 +54,8 @@ impl<'a, C: ClickHandler> Menu<'a, C> {
         }
     }
 
-    pub fn handle_clicks(&self, m: &MouseState) -> Option<C::Type> {
-        C::handle_clicks(&self.btns, m)
+    pub fn handle_clicks(&self, x: i32, y: i32) -> Option<C::Type> {
+        C::handle_clicks(&self.btns, x, y)
     }
 
     pub fn render(

@@ -9,17 +9,17 @@ use crate::ui::text::Text;
 
 use super::{
     tile::{Tile, TILE_SIZE},
-    Coords, GameState,
+    Coords, Stage,
 };
 
-pub enum MapSize {
+pub enum Size {
     Small,
     Normal,
     Large,
 }
 
 pub struct Map<'a> {
-    dim: Coords<usize>,
+    dim: Coords<i32>,
     map: Vec<Vec<Tile>>,
     lost: bool,
     mines: u8,
@@ -29,19 +29,19 @@ pub struct Map<'a> {
 
 impl<'a> Map<'a> {
     pub fn new(
-        size: MapSize,
+        size: &Size,
         tex_creator: &'a TextureCreator<WindowContext>,
         font: &'a Font,
     ) -> Map<'a> {
         let dim = match size {
-            MapSize::Small => (9, 9),
-            MapSize::Normal => (16, 16),
-            MapSize::Large => (18, 30),
+            Size::Small => (9, 9),
+            Size::Normal => (16, 16),
+            Size::Large => (18, 30),
         };
         let mines = match size {
-            MapSize::Small => 10,
-            MapSize::Normal => 40,
-            MapSize::Large => 99,
+            Size::Small => 10,
+            Size::Normal => 40,
+            Size::Large => 99,
         };
         Map {
             dim,
@@ -63,15 +63,15 @@ impl<'a> Map<'a> {
         }
     }
 
-    fn get(&self, pos: Coords<usize>) -> Option<&Tile> {
+    fn get(&self, pos: Coords<i32>) -> Option<&Tile> {
         if pos.0 > self.dim.0 - 1 || pos.1 > self.dim.1 - 1 {
             None
         } else {
-            Some(&self.map[pos.1][pos.0])
+            Some(&self.map[usize::try_from(pos.1).unwrap()][usize::try_from(pos.0).unwrap()])
         }
     }
 
-    fn get_adjacent_tiles(&self, pos: Coords<usize>) -> Vec<Coords<usize>> {
+    fn get_adjacent_tiles(&self, pos: Coords<i32>) -> Vec<Coords<i32>> {
         let mut adjacent = vec![];
         let (col, row) = pos;
         if col > 0 {
@@ -103,7 +103,7 @@ impl<'a> Map<'a> {
     }
 
     pub fn generate_mines(&mut self, rng: &mut ThreadRng) {
-        let (mut rand_col, mut rand_row): Coords<usize>;
+        let (mut rand_col, mut rand_row): Coords<i32>;
 
         for _ in 0..self.mines {
             loop {
@@ -114,7 +114,8 @@ impl<'a> Map<'a> {
                 }
             }
 
-            self.map[rand_row][rand_col].set_mine();
+            self.map[usize::try_from(rand_row).unwrap()][usize::try_from(rand_col).unwrap()]
+                .set_mine();
         }
     }
 
@@ -124,7 +125,8 @@ impl<'a> Map<'a> {
                 if tile.is_mine {
                     continue;
                 }
-                let adjacent = self.get_adjacent_tiles((j, i));
+                let adjacent =
+                    self.get_adjacent_tiles((i32::try_from(j).unwrap(), i32::try_from(i).unwrap()));
                 let mut mines = 0;
                 for adj in adjacent {
                     if self.get(adj).unwrap().is_mine {
@@ -136,8 +138,8 @@ impl<'a> Map<'a> {
         }
     }
 
-    pub fn mine(&mut self, pos: Coords<usize>, prev: &mut [Coords<usize>]) {
-        let tile = &mut self.map[pos.1][pos.0];
+    pub fn mine(&mut self, pos: Coords<i32>, prev: &mut [Coords<i32>]) {
+        let tile = &mut self.map[usize::try_from(pos.1).unwrap()][usize::try_from(pos.0).unwrap()];
         if tile.is_mined || tile.is_flagged {
             return;
         }
@@ -154,8 +156,8 @@ impl<'a> Map<'a> {
         }
     }
 
-    pub fn flag(&mut self, pos: Coords<usize>) {
-        let tile = &mut self.map[pos.1][pos.0];
+    pub fn flag(&mut self, pos: Coords<i32>) {
+        let tile = &mut self.map[usize::try_from(pos.1).unwrap()][usize::try_from(pos.0).unwrap()];
         if tile.is_mined {
             return;
         }
@@ -171,20 +173,20 @@ impl<'a> Map<'a> {
         }
     }
 
-    pub fn check_state(&self) -> GameState {
+    pub fn check_state(&self) -> Stage {
         if self.lost {
-            return GameState::Lose;
+            return Stage::Lose;
         }
 
-        for row in self.map.iter() {
+        for row in &self.map {
             for tile in row {
                 if !tile.is_mined && !tile.is_mine {
-                    return GameState::Playing;
+                    return Stage::Playing;
                 }
             }
         }
 
-        GameState::Win
+        Stage::Win
     }
 
     pub fn render(
@@ -199,8 +201,8 @@ impl<'a> Map<'a> {
                 tile.render(
                     canvas,
                     tex,
-                    (i * TILE_SIZE as usize) as _,
-                    (j * TILE_SIZE as usize) as _,
+                    i32::try_from(i).unwrap() * TILE_SIZE,
+                    i32::try_from(j).unwrap() * TILE_SIZE,
                 )?;
             }
         }
@@ -208,13 +210,11 @@ impl<'a> Map<'a> {
         self.flags_text.render(canvas, font, tex_creator)
     }
 
-    pub fn inside(&self, x: i32, y: i32) -> Option<Coords<usize>> {
-        if (x as usize) > self.dim.1 * TILE_SIZE as usize
-            || (y as usize) > self.dim.0 * TILE_SIZE as usize
-        {
+    pub fn inside(&self, x: i32, y: i32) -> Option<Coords<i32>> {
+        if x > self.dim.1 * TILE_SIZE || y > self.dim.0 * TILE_SIZE {
             None
         } else {
-            Some(((y / TILE_SIZE) as usize, (x / TILE_SIZE) as usize))
+            Some((y / TILE_SIZE, x / TILE_SIZE))
         }
     }
 }

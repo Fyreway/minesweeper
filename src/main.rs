@@ -1,10 +1,12 @@
+#![warn(clippy::pedantic)]
+
 use std::time::Duration;
 
 use context::Context;
 use game::{
-    map::{Map, MapSize},
+    map::{Map, Size},
     tile::TILE_SIZE,
-    GameState,
+    Stage,
 };
 use resource::resource;
 use sdl2::{
@@ -17,8 +19,8 @@ use sdl2::{
     video::{WindowContext, WindowPos},
 };
 use ui::{
-    end_menu::{end_menu, EndMenuClickStatus},
-    main_menu::{main_menu, MainMenuClickStatus},
+    end_menu::{self, end_menu},
+    main_menu::{self, main_menu},
 };
 
 mod context;
@@ -26,7 +28,7 @@ mod game;
 mod ui;
 
 fn generate<'a>(
-    size: MapSize,
+    size: &Size,
     tex_creator: &'a TextureCreator<WindowContext>,
     font: &'a Font,
 ) -> Map<'a> {
@@ -48,22 +50,22 @@ fn run() -> Result<bool, String> {
         &mut ctx.canvas,
     )? {
         match status {
-            MainMenuClickStatus::Small => {
-                map = generate(MapSize::Small, &ctx.tex_creator, &font);
+            main_menu::ClickStatus::Small => {
+                map = generate(&Size::Small, &ctx.tex_creator, &font);
                 let win = ctx.canvas.window_mut();
                 win.set_size(9 * TILE_SIZE as u32, 9 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
                 win.set_position(WindowPos::Centered, WindowPos::Centered);
             }
-            MainMenuClickStatus::Normal => {
-                map = generate(MapSize::Normal, &ctx.tex_creator, &font);
+            main_menu::ClickStatus::Normal => {
+                map = generate(&Size::Normal, &ctx.tex_creator, &font);
                 let win = ctx.canvas.window_mut();
                 win.set_size(16 * TILE_SIZE as u32, 16 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
                 win.set_position(WindowPos::Centered, WindowPos::Centered);
             }
-            MainMenuClickStatus::Large => {
-                map = generate(MapSize::Large, &ctx.tex_creator, &font);
+            main_menu::ClickStatus::Large => {
+                map = generate(&Size::Large, &ctx.tex_creator, &font);
                 let win = ctx.canvas.window_mut();
                 win.set_size(30 * TILE_SIZE as u32, 18 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
@@ -77,7 +79,7 @@ fn run() -> Result<bool, String> {
     let tex = ctx
         .tex_creator
         .load_texture_bytes(&resource!("res/spritesheet.png"))?;
-    let mut state = GameState::Playing;
+    let mut state = Stage::Playing;
     'gameloop: loop {
         for e in ctx.event_pump.poll_iter() {
             match e {
@@ -106,8 +108,8 @@ fn run() -> Result<bool, String> {
 
         state = map.check_state();
         match state {
-            GameState::Win | GameState::Lose => break 'gameloop,
-            GameState::Playing => (),
+            Stage::Win | Stage::Lose => break 'gameloop,
+            Stage::Playing => (),
         }
 
         ctx.canvas.clear();
@@ -118,15 +120,15 @@ fn run() -> Result<bool, String> {
     }
 
     if let Some(status) = end_menu(
-        state,
+        &state,
         &ctx.tex_creator,
         &ctx.ttf,
         &mut ctx.event_pump,
         &mut ctx.canvas,
     )? {
         match status {
-            EndMenuClickStatus::Continue => return Ok(false),
-            EndMenuClickStatus::Exit => return Ok(true),
+            end_menu::ClickStatus::Continue => return Ok(false),
+            end_menu::ClickStatus::Exit => return Ok(true),
         }
     }
     Ok(false)

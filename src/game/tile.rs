@@ -41,7 +41,7 @@ impl Tile {
             self.rect.x = 32;
             true
         } else {
-            self.rect.x = 16 * self.value.unwrap() as i32;
+            self.rect.x = 16 * i32::from(self.value.unwrap());
             self.rect.y = 0;
             false
         }

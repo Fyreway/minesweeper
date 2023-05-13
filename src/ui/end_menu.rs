@@ -4,7 +4,7 @@ use resource::resource;
 
 use sdl2::{
     event::Event,
-    mouse::MouseState,
+    mouse::MouseButton,
     render::{TextureCreator, WindowCanvas},
     rwops::RWops,
     ttf::{FontStyle, Sdl2TtfContext},
@@ -12,7 +12,7 @@ use sdl2::{
     EventPump,
 };
 
-use crate::{buttons, game::GameState, texts};
+use crate::{buttons, game::Stage, texts};
 
 use super::{
     button::Button,
@@ -21,7 +21,7 @@ use super::{
     POS_CENTERED,
 };
 
-pub enum EndMenuClickStatus {
+pub enum ClickStatus {
     Continue,
     Exit,
 }
@@ -30,13 +30,13 @@ pub enum EndMenuClickStatus {
 struct EndMenuHandler {}
 
 impl ClickHandler for EndMenuHandler {
-    type Type = EndMenuClickStatus;
+    type Type = ClickStatus;
 
-    fn handle_clicks(btns: &[Button<'_>], m: &MouseState) -> Option<Self::Type> {
-        if btns[0].inside(m) {
-            Some(EndMenuClickStatus::Continue)
-        } else if btns[1].inside(m) {
-            Some(EndMenuClickStatus::Exit)
+    fn handle_clicks(btns: &[Button<'_>], x: i32, y: i32) -> Option<Self::Type> {
+        if btns[0].inside(x, y) {
+            Some(ClickStatus::Continue)
+        } else if btns[1].inside(x, y) {
+            Some(ClickStatus::Exit)
         } else {
             None
         }
@@ -44,17 +44,17 @@ impl ClickHandler for EndMenuHandler {
 }
 
 pub fn end_menu(
-    state: GameState,
+    state: &Stage,
     tex_creator: &TextureCreator<WindowContext>,
     ttf: &Sdl2TtfContext,
     event_pump: &mut EventPump,
     canvas: &mut WindowCanvas,
-) -> Result<Option<EndMenuClickStatus>, String> {
+) -> Result<Option<ClickStatus>, String> {
     let res = resource!("res/font/opensans.ttf");
     let small_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
     let mut title_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 500)?;
     title_font.set_style(FontStyle::BOLD);
-    let mut main_menu = Menu::<EndMenuHandler>::new(
+    let mut end_menu = Menu::<EndMenuHandler>::new(
         buttons![
             {
                 scale: 5,
@@ -70,25 +70,30 @@ pub fn end_menu(
                 tex_creator: tex_creator,
                 font: &title_font
             }:
-            (POS_CENTERED, 50) : if let GameState::Lose = state {"You Lose!"} else {"You Win!"}
+            (POS_CENTERED, 50) : if let Stage::Lose = state {"You Lose!"} else {"You Win!"}
         ],
         (800, 500),
     );
 
     'top: loop {
         for e in event_pump.poll_iter() {
-            if let Event::Quit { .. } = e {
-                break 'top;
-            }
-        }
-        let mouse_state = event_pump.mouse_state();
-        if mouse_state.left() {
-            if let Some(status) = main_menu.handle_clicks(&mouse_state) {
-                return Ok(Some(status));
+            match e {
+                Event::Quit { .. } => break 'top,
+                Event::MouseButtonDown {
+                    mouse_btn: MouseButton::Left,
+                    x,
+                    y,
+                    ..
+                } => {
+                    if let Some(status) = end_menu.handle_clicks(x, y) {
+                        return Ok(Some(status));
+                    }
+                }
+                _ => (),
             }
         }
 
-        main_menu.render(canvas, &small_font, tex_creator)?;
+        end_menu.render(canvas, &small_font, tex_creator)?;
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }
 

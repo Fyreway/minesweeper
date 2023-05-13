@@ -1,7 +1,6 @@
 use resource::resource;
 use sdl2::{
     image::LoadTexture,
-    mouse::MouseState,
     pixels::Color,
     rect::Rect,
     render::{Texture, TextureCreator, TextureQuery, WindowCanvas},
@@ -50,7 +49,7 @@ impl Button<'_> {
             .create_texture_from_surface(&text_surf)
             .expect("Could not get text texture");
         let TextureQuery { width, height, .. } = text_tex.query();
-        let text_width = width as i32 * 8 * scale / height as i32;
+        let text_width = i32::try_from(width).unwrap() * 8 * scale / i32::try_from(height).unwrap();
         Button {
             x: x_,
             y: y_,
@@ -63,8 +62,8 @@ impl Button<'_> {
             text_rect: Rect::new(
                 x_ + (w * scale - text_width) / 2,
                 y_ + (16 * scale) / 4,
-                text_width as _,
-                ((16 * scale) / 2) as _,
+                u32::try_from(text_width).unwrap(),
+                u32::try_from(16 * scale / 2).unwrap(),
             ),
         }
     }
@@ -76,8 +75,8 @@ impl Button<'_> {
             Rect::new(
                 self.x,
                 self.y,
-                (16 * self.scale) as _,
-                (16 * self.scale) as _,
+                u32::try_from(16 * self.scale).unwrap(),
+                u32::try_from(16 * self.scale).unwrap(),
             ),
         )?;
 
@@ -90,8 +89,8 @@ impl Button<'_> {
                 Rect::new(
                     self.x + 16 * self.scale,
                     self.y,
-                    (middle_width * self.scale) as _,
-                    (16 * self.scale) as _,
+                    u32::try_from(middle_width * self.scale).unwrap(),
+                    u32::try_from(16 * self.scale).unwrap(),
                 ),
             )?;
         }
@@ -102,18 +101,15 @@ impl Button<'_> {
             Rect::new(
                 self.x + (16 + middle_width) * self.scale,
                 self.y,
-                (16 * self.scale) as _,
-                (16 * self.scale) as _,
+                u32::try_from(16 * self.scale).unwrap(),
+                u32::try_from(16 * self.scale).unwrap(),
             ),
         )?;
 
         canvas.copy(&self.text_tex, None, self.text_rect)
     }
 
-    pub fn inside(&self, m: &MouseState) -> bool {
-        m.x() > self.x
-            && m.x() < self.x + self.w * self.scale
-            && m.y() > self.y
-            && m.y() < self.y + 16 * self.scale
+    pub fn inside(&self, x: i32, y: i32) -> bool {
+        x > self.x && x < self.x + self.w * self.scale && y > self.y && y < self.y + 16 * self.scale
     }
 }
