@@ -25,6 +25,7 @@ impl Context {
         let win = video_subsys
             .window("Minesweeper", 800, 600)
             .position_centered()
+            .resizable()
             .build()
             .map_err(|e| e.to_string())?;
         let canvas = win

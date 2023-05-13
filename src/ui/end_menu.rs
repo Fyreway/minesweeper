@@ -69,6 +69,7 @@ pub fn end_menu(
             }:
             (POS_CENTERED, 50) : if let GameState::Lose = state {"You Lose!"} else {"You Win!"}
         ],
+        (800, 500),
     );
 
     'top: loop {

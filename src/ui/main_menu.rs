@@ -19,6 +19,7 @@ pub enum MainMenuClickStatus {
     Small,
     Normal,
     Large,
+    // Custom,
 }
 
 #[derive(Default)]
@@ -34,6 +35,8 @@ impl ClickHandler for MainMenuHandler {
             Some(MainMenuClickStatus::Normal)
         } else if btns[2].inside(m) {
             Some(MainMenuClickStatus::Large)
+        // } else if btns[3].inside(m) {
+        //     Some(MainMenuClickStatus::Custom)
         } else {
             None
         }
@@ -61,6 +64,7 @@ pub fn main_menu(
             (POS_CENTERED, 300, 64) : "Small",
             (POS_CENTERED, 400, 64) : "Normal",
             (POS_CENTERED, 500, 64) : "Large"
+            // (POS_CENTERED, 600, 64) : "Custom"
         ],
         texts![
             {
@@ -70,6 +74,7 @@ pub fn main_menu(
             }:
             (POS_CENTERED, 50) : "MINESWEEPER"
         ],
+        (800, 600),
     );
 
     'top: loop {

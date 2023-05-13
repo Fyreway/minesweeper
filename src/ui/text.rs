@@ -9,9 +9,6 @@ use sdl2::{
 use super::POS_CENTERED;
 
 pub struct Text<'a> {
-    x: i32,
-    y: i32,
-    scale: i32,
     text: String,
     prev_text: String,
     text_tex: Texture<'a>,
@@ -48,9 +45,6 @@ impl<'a> Text<'a> {
         };
 
         Text {
-            x: x_,
-            y: y_,
-            scale,
             text: text.to_string(),
             prev_text: text.to_string(),
             text_tex,

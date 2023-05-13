@@ -19,7 +19,6 @@ pub enum MapSize {
 }
 
 pub struct Map<'a> {
-    size: MapSize,
     dim: Coords<usize>,
     map: Vec<Vec<Tile>>,
     lost: bool,
@@ -45,7 +44,6 @@ impl<'a> Map<'a> {
             MapSize::Large => 99,
         };
         Map {
-            size,
             dim,
             map: {
                 let mut map = vec![];
@@ -133,7 +131,7 @@ impl<'a> Map<'a> {
                         mines += 1;
                     }
                 }
-                self.map[i][j].value = Some(mines);
+                self.map[i][j].set_value(mines);
             }
         }
     }

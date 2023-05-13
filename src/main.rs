@@ -1,9 +1,9 @@
-#![allow(dead_code)]
 use std::time::Duration;
 
 use context::Context;
 use game::{
     map::{Map, MapSize},
+    tile::TILE_SIZE,
     GameState,
 };
 use sdl2::{
@@ -41,9 +41,27 @@ fn run() -> Result<bool, String> {
         &mut ctx.canvas,
     )? {
         match status {
-            MainMenuClickStatus::Small => map = generate(MapSize::Small, &ctx.tex_creator, &font),
-            MainMenuClickStatus::Normal => map = generate(MapSize::Normal, &ctx.tex_creator, &font),
-            MainMenuClickStatus::Large => map = generate(MapSize::Large, &ctx.tex_creator, &font),
+            MainMenuClickStatus::Small => {
+                map = generate(MapSize::Small, &ctx.tex_creator, &font);
+                ctx.canvas
+                    .window_mut()
+                    .set_size(9 * TILE_SIZE as u32, 9 * TILE_SIZE as u32)
+                    .map_err(|e| e.to_string())?;
+            }
+            MainMenuClickStatus::Normal => {
+                map = generate(MapSize::Normal, &ctx.tex_creator, &font);
+                ctx.canvas
+                    .window_mut()
+                    .set_size(16 * TILE_SIZE as u32, 16 * TILE_SIZE as u32)
+                    .map_err(|e| e.to_string())?;
+            }
+            MainMenuClickStatus::Large => {
+                map = generate(MapSize::Large, &ctx.tex_creator, &font);
+                ctx.canvas
+                    .window_mut()
+                    .set_size(30 * TILE_SIZE as u32, 18 * TILE_SIZE as u32)
+                    .map_err(|e| e.to_string())?;
+            }
         }
     } else {
         return Ok(true);

@@ -18,7 +18,6 @@ pub struct Button<'a> {
     w: i32,
     scale: i32,
     img: Texture<'a>,
-    text: String,
     text_tex: Texture<'a>,
     text_rect: Rect,
 }
@@ -62,7 +61,6 @@ impl Button<'_> {
             img: tex_creator
                 .load_texture(file)
                 .expect("Could not load image"),
-            text: text.to_string(),
             text_tex,
             text_rect: Rect::new(
                 x_ + (w * scale - text_width) / 2,
