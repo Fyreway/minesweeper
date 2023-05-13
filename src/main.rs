@@ -9,15 +9,7 @@ use game::{
     Stage,
 };
 use resource::resource;
-use sdl2::{
-    event::Event,
-    image::LoadTexture,
-    mouse::MouseButton,
-    render::TextureCreator,
-    rwops::RWops,
-    ttf::Font,
-    video::{WindowContext, WindowPos},
-};
+use sdl2::{event::Event, image::LoadTexture, mouse::MouseButton, rwops::RWops, video::WindowPos};
 use ui::{
     end_menu::{self, end_menu},
     main_menu::{self, main_menu},
@@ -26,17 +18,6 @@ use ui::{
 mod context;
 mod game;
 mod ui;
-
-fn generate<'a>(
-    size: &Size,
-    tex_creator: &'a TextureCreator<WindowContext>,
-    font: &'a Font,
-) -> Map<'a> {
-    let mut map = Map::new(size, tex_creator, font);
-    map.generate_mines(&mut rand::thread_rng());
-    map.generate_tiles();
-    map
-}
 
 fn run() -> Result<bool, String> {
     let mut ctx = Context::new()?;
@@ -51,21 +32,21 @@ fn run() -> Result<bool, String> {
     )? {
         match status {
             main_menu::ClickStatus::Small => {
-                map = generate(&Size::Small, &ctx.tex_creator, &font);
+                map = Map::new(&Size::Small, &ctx.tex_creator, &font);
                 let win = ctx.canvas.window_mut();
                 win.set_size(9 * TILE_SIZE as u32, 9 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
                 win.set_position(WindowPos::Centered, WindowPos::Centered);
             }
             main_menu::ClickStatus::Normal => {
-                map = generate(&Size::Normal, &ctx.tex_creator, &font);
+                map = Map::new(&Size::Normal, &ctx.tex_creator, &font);
                 let win = ctx.canvas.window_mut();
                 win.set_size(16 * TILE_SIZE as u32, 16 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
                 win.set_position(WindowPos::Centered, WindowPos::Centered);
             }
             main_menu::ClickStatus::Large => {
-                map = generate(&Size::Large, &ctx.tex_creator, &font);
+                map = Map::new(&Size::Large, &ctx.tex_creator, &font);
                 let win = ctx.canvas.window_mut();
                 win.set_size(30 * TILE_SIZE as u32, 18 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
@@ -89,6 +70,11 @@ fn run() -> Result<bool, String> {
                 } => match mouse_btn {
                     MouseButton::Left => {
                         if let Some(tile) = map.inside(x, y) {
+                            if map.first_move {
+                                map.generate_mines(&mut rand::thread_rng(), tile.0, tile.1);
+                                map.generate_tiles();
+                                map.first_move = false;
+                            }
                             map.mine(tile, &mut Vec::new());
                         }
                     }

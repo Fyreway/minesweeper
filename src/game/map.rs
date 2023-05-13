@@ -22,6 +22,7 @@ pub struct Map<'a> {
     dim: Coords<i32>,
     map: Vec<Vec<Tile>>,
     lost: bool,
+    pub first_move: bool,
     mines: u8,
     flags: u8,
     flags_text: Text<'a>,
@@ -57,6 +58,7 @@ impl<'a> Map<'a> {
                 map
             },
             lost: false,
+            first_move: true,
             mines,
             flags: mines,
             flags_text: Text::new(0, -10, 3, tex_creator, &format!("Flags: {mines}"), font),
@@ -102,14 +104,17 @@ impl<'a> Map<'a> {
         adjacent
     }
 
-    pub fn generate_mines(&mut self, rng: &mut ThreadRng) {
+    pub fn generate_mines(&mut self, rng: &mut ThreadRng, x: i32, y: i32) {
         let (mut rand_col, mut rand_row): Coords<i32>;
 
         for _ in 0..self.mines {
             loop {
                 rand_col = rng.gen_range(0..self.dim.0);
                 rand_row = rng.gen_range(0..self.dim.1);
-                if !self.get((rand_col, rand_row)).unwrap().is_mine {
+                if !(self.get((rand_col, rand_row)).unwrap().is_mine
+                    || (x - rand_col).abs() < 2
+                    || (y - rand_row).abs() < 2)
+                {
                     break;
                 }
             }
