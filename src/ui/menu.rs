@@ -2,7 +2,7 @@ use sdl2::{
     mouse::MouseState,
     render::{TextureCreator, WindowCanvas},
     ttf::Font,
-    video::WindowContext,
+    video::{WindowContext, WindowPos},
 };
 
 use super::{button::Button, text::Text};
@@ -68,10 +68,10 @@ impl<'a, C: ClickHandler> Menu<'a, C> {
         canvas.clear();
 
         if canvas.window().size() != self.size {
-            canvas
-                .window_mut()
-                .set_size(self.size.0, self.size.1)
+            let win = canvas.window_mut();
+            win.set_size(self.size.0, self.size.1)
                 .map_err(|e| e.to_string())?;
+            win.set_position(WindowPos::Centered, WindowPos::Centered);
         }
 
         for btn in &self.btns {

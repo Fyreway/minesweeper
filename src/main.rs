@@ -7,8 +7,12 @@ use game::{
     GameState,
 };
 use sdl2::{
-    event::Event, image::LoadTexture, mouse::MouseButton, render::TextureCreator, ttf::Font,
-    video::WindowContext,
+    event::Event,
+    image::LoadTexture,
+    mouse::MouseButton,
+    render::TextureCreator,
+    ttf::Font,
+    video::{WindowContext, WindowPos},
 };
 use ui::{
     end_menu::{end_menu, EndMenuClickStatus},
@@ -43,24 +47,24 @@ fn run() -> Result<bool, String> {
         match status {
             MainMenuClickStatus::Small => {
                 map = generate(MapSize::Small, &ctx.tex_creator, &font);
-                ctx.canvas
-                    .window_mut()
-                    .set_size(9 * TILE_SIZE as u32, 9 * TILE_SIZE as u32)
+                let win = ctx.canvas.window_mut();
+                win.set_size(9 * TILE_SIZE as u32, 9 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
+                win.set_position(WindowPos::Centered, WindowPos::Centered);
             }
             MainMenuClickStatus::Normal => {
                 map = generate(MapSize::Normal, &ctx.tex_creator, &font);
-                ctx.canvas
-                    .window_mut()
-                    .set_size(16 * TILE_SIZE as u32, 16 * TILE_SIZE as u32)
+                let win = ctx.canvas.window_mut();
+                win.set_size(16 * TILE_SIZE as u32, 16 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
+                win.set_position(WindowPos::Centered, WindowPos::Centered);
             }
             MainMenuClickStatus::Large => {
                 map = generate(MapSize::Large, &ctx.tex_creator, &font);
-                ctx.canvas
-                    .window_mut()
-                    .set_size(30 * TILE_SIZE as u32, 18 * TILE_SIZE as u32)
+                let win = ctx.canvas.window_mut();
+                win.set_size(30 * TILE_SIZE as u32, 18 * TILE_SIZE as u32)
                     .map_err(|e| e.to_string())?;
+                win.set_position(WindowPos::Centered, WindowPos::Centered);
             }
         }
     } else {
