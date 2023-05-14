@@ -63,7 +63,7 @@ impl<'a> Text<'a> {
         if self.prev_text != self.text {
             let text_surf = font
                 .render(&self.text)
-                .solid(Color::WHITE)
+                .blended(Color::WHITE)
                 .expect("Could not get text surface");
             self.text_tex = tex_creator
                 .create_texture_from_surface(&text_surf)

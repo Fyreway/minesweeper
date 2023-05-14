@@ -1,10 +1,10 @@
+use crate::stopwatch::Stopwatch;
 use rand::{rngs::ThreadRng, Rng};
 use sdl2::{
     render::{Texture, TextureCreator, WindowCanvas},
     ttf::Font,
     video::WindowContext,
 };
-use stopwatch::Stopwatch;
 
 use crate::ui::text::Text;
 
@@ -77,7 +77,7 @@ impl<'a> Map<'a> {
                 "Time: 0",
                 font,
             ),
-            stopwatch: Stopwatch::new(),
+            stopwatch: Stopwatch::default(),
         }
     }
 

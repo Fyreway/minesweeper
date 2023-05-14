@@ -17,6 +17,7 @@ use ui::{
 
 mod context;
 mod game;
+mod stopwatch;
 mod ui;
 
 fn run() -> Result<bool, String> {
