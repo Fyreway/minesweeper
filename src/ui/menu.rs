@@ -8,11 +8,21 @@ use super::{button::Button, text::Text};
 
 #[macro_export]
 macro_rules! buttons {
-    [{$scale:expr, $tex_creator:expr, $ttf:expr, $res:expr}: $( ($x:expr, $y:expr, $w:expr, $size:expr) : $text:expr ),*] => {
+    [{$scale:expr, $tex_creator:expr, $ttf:expr, $res:expr, $width:expr, $height:expr}: $( ($x:expr, $y:expr, $w:expr, $size:expr) : $text:expr ),*] => {
         {
             vec![
                 $(
-                    Button::new($x, $y, $w, $scale, $tex_creator, $text, &$ttf.load_font_from_rwops(RWops::from_bytes(&$res)?, $size * $scale)?)
+                    Button::new($x, $y, 0, 0, $w, $scale, $tex_creator, $text, &$ttf.load_font_from_rwops(RWops::from_bytes(&$res)?, $size * $scale)?, $width, $height)
+                ),*
+            ]
+        }
+    };
+
+    [{$scale:expr, $tex_creator:expr, $ttf:expr, $res:expr, $offset_x:expr, $offset_y:expr, $width:expr, $height:expr}: $( ($x:expr, $y:expr, $w:expr, $size:expr) : $text:expr ),*] => {
+        {
+            vec![
+                $(
+                    Button::new($x, $y, $offset_x, $offset_y, $w, $scale, $tex_creator, $text, &$ttf.load_font_from_rwops(RWops::from_bytes(&$res)?, $size * $scale)?, $width, $height)
                 ),*
             ]
         }
@@ -21,11 +31,21 @@ macro_rules! buttons {
 
 #[macro_export]
 macro_rules! texts {
-    [{$tex_creator:expr, $ttf:expr, $res:expr}: $( ($x:expr, $y:expr, $size:expr) : $text:expr ),*] => {
+    [{$tex_creator:expr, $ttf:expr, $res:expr, $width:expr, $height:expr}: $( ($x:expr, $y:expr, $size:expr) : $text:expr ),*] => {
         {
             vec![
                 $(
-                    Text::new($x, $y, $tex_creator, $text, &$ttf.load_font_from_rwops(RWops::from_bytes(&$res)?, $size)?)
+                    Text::new($x, $y, 0, 0, $tex_creator, $text, &$ttf.load_font_from_rwops(RWops::from_bytes(&$res)?, $size)?, $width, $height)
+                ),*
+            ]
+        }
+    };
+
+    [{$tex_creator:expr, $ttf:expr, $res:expr, $offset_x:expr, $offset_y:expr, $width:expr, $height:expr}: $( ($x:expr, $y:expr, $size:expr) : $text:expr ),*] => {
+        {
+            vec![
+                $(
+                    Text::new($x, $y, $offset_x, $offset_y, $tex_creator, $text, &$ttf.load_font_from_rwops(RWops::from_bytes(&$res)?, $size)?, $width, $height)
                 ),*
             ]
         }
@@ -64,8 +84,6 @@ impl<'a, C: ClickHandler> Menu<'a, C> {
         font: &Font,
         tex_creator: &'a TextureCreator<WindowContext>,
     ) -> Result<(), String> {
-        canvas.clear();
-
         if canvas.window().size() != self.size {
             let win = canvas.window_mut();
             win.set_size(self.size.0, self.size.1)

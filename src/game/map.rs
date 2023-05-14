@@ -1,6 +1,8 @@
 use crate::stopwatch::Stopwatch;
 use rand::{rngs::ThreadRng, Rng};
+use resource::resource;
 use sdl2::{
+    image::LoadTexture,
     render::{Texture, TextureCreator, WindowCanvas},
     ttf::Font,
     video::WindowContext,
@@ -20,10 +22,11 @@ pub enum Size {
 }
 
 pub struct Map<'a> {
-    dim: Coords<i32>,
+    pub dim: Coords<i32>,
     map: Vec<Vec<Tile>>,
     lost: bool,
     pub first_move: bool,
+    spritesheet: Texture<'a>,
     mines: u8,
     flags: u8,
     flags_text: Text<'a>,
@@ -62,9 +65,22 @@ impl<'a> Map<'a> {
             },
             lost: false,
             first_move: true,
+            spritesheet: tex_creator
+                .load_texture_bytes(&resource!("res/spritesheet.png"))
+                .expect("Could not load spritesheet"),
             mines,
             flags: mines,
-            flags_text: Text::new(0, 0, tex_creator, &format!("Flags: {mines}"), font),
+            flags_text: Text::new(
+                0,
+                0,
+                0,
+                0,
+                tex_creator,
+                &format!("Flags: {mines}"),
+                font,
+                u32::try_from(dim.1 * TILE_SIZE).unwrap(),
+                u32::try_from(dim.0 * TILE_SIZE).unwrap(),
+            ),
             time_text: Text::new(
                 0,
                 match size {
@@ -73,9 +89,13 @@ impl<'a> Map<'a> {
                     Size::Large => 18,
                 } * TILE_SIZE
                     - 30,
+                0,
+                0,
                 tex_creator,
                 "Time: 0",
                 font,
+                u32::try_from(dim.1 * TILE_SIZE).unwrap(),
+                u32::try_from(dim.0 * TILE_SIZE).unwrap(),
             ),
             stopwatch: Stopwatch::default(),
         }
@@ -222,27 +242,29 @@ impl<'a> Map<'a> {
     pub fn render(
         &mut self,
         canvas: &mut WindowCanvas,
-        tex: &Texture,
         font: &Font,
         tex_creator: &'a TextureCreator<WindowContext>,
+        hidden: bool,
     ) -> Result<(), String> {
         for (i, row) in self.map.iter().enumerate() {
             for (j, tile) in row.iter().enumerate() {
                 tile.render(
                     canvas,
-                    tex,
+                    &self.spritesheet,
                     i32::try_from(i).unwrap() * TILE_SIZE,
                     i32::try_from(j).unwrap() * TILE_SIZE,
+                    hidden,
                 )?;
             }
         }
 
-        self.flags_text.render(canvas, font, tex_creator)?;
+        if hidden {
+            self.flags_text.render(canvas, font, tex_creator)?;
+            self.time_text
+                .set_text(&format!("Time: {}", self.stopwatch.elapsed().as_secs()));
 
-        self.time_text
-            .set_text(&format!("Time: {}", self.stopwatch.elapsed().as_secs()));
-
-        self.time_text.render(canvas, font, tex_creator)?;
+            self.time_text.render(canvas, font, tex_creator)?;
+        }
 
         Ok(())
     }

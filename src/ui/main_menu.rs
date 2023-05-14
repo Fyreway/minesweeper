@@ -3,6 +3,7 @@ use resource::{resource, Resource};
 use sdl2::{
     event::Event,
     mouse::MouseButton,
+    pixels::Color,
     render::{TextureCreator, WindowCanvas},
     rwops::RWops,
     ttf::Sdl2TtfContext,
@@ -57,14 +58,14 @@ pub fn main_menu(
     let font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 50)?;
     let mut main_menu = Menu::<MainMenuHandler>::new(
         buttons![
-            { 5, tex_creator, ttf, font_res }:
+            { 5, tex_creator, ttf, font_res, 800, 600 }:
             (POS_CENTERED, 300, 64, 7) : "Small",
             (POS_CENTERED, 400, 64, 7) : "Normal",
             (POS_CENTERED, 500, 64, 7) : "Large"
             // (POS_CENTERED, 600, 64) : "Custom"
         ],
         texts![
-            { tex_creator, ttf, font_res }:
+            { tex_creator, ttf, font_res, 800, 600 }:
             (POS_CENTERED, 50, 90) : "MINESWEEPER",
             (5, 560, 20) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
         ],
@@ -89,6 +90,8 @@ pub fn main_menu(
             }
         }
 
+        canvas.set_draw_color(Color::RGB(28, 28, 28));
+        canvas.clear();
         main_menu.render(canvas, &font, tex_creator)?;
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }

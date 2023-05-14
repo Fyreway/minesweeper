@@ -8,8 +8,7 @@ use game::{
     tile::TILE_SIZE,
     Stage,
 };
-use resource::resource;
-use sdl2::{event::Event, image::LoadTexture, mouse::MouseButton, rwops::RWops, video::WindowPos};
+use sdl2::{event::Event, mouse::MouseButton, rwops::RWops, video::WindowPos};
 use ui::{
     end_menu::{self, end_menu},
     main_menu::{self, main_menu},
@@ -60,9 +59,6 @@ fn run() -> Result<bool, String> {
         return Ok(true);
     }
 
-    let tex = ctx
-        .tex_creator
-        .load_texture_bytes(&resource!("res/spritesheet.png"))?;
     let mut state = Stage::Playing;
     'gameloop: loop {
         for e in ctx.event_pump.poll_iter() {
@@ -103,7 +99,7 @@ fn run() -> Result<bool, String> {
         }
 
         ctx.canvas.clear();
-        map.render(&mut ctx.canvas, &tex, &font, &ctx.tex_creator)?;
+        map.render(&mut ctx.canvas, &font, &ctx.tex_creator, true)?;
         ctx.canvas.present();
 
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
@@ -117,14 +113,14 @@ fn run() -> Result<bool, String> {
         &mut ctx.event_pump,
         &mut ctx.canvas,
         &ctx.font_res,
-        map.stopwatch.elapsed().as_secs(),
+        &mut map,
     )? {
         match status {
             end_menu::ClickStatus::Menu => return Ok(false),
             end_menu::ClickStatus::Exit => return Ok(true),
         }
     }
-    Ok(false)
+    Ok(true)
 }
 
 fn main() -> Result<(), String> {

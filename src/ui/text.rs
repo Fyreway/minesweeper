@@ -16,12 +16,17 @@ pub struct Text<'a> {
 }
 
 impl<'a> Text<'a> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new<'b>(
         x: i32,
         y: i32,
+        offset_x: i32,
+        offset_y: i32,
         tex_creator: &'b TextureCreator<WindowContext>,
         text: &str,
         font: &Font,
+        width: u32,
+        height: u32,
     ) -> Text<'b> {
         let text_surf = font
             .render(text)
@@ -30,23 +35,27 @@ impl<'a> Text<'a> {
         let text_tex = tex_creator
             .create_texture_from_surface(&text_surf)
             .expect("Could not get text texture");
-        let TextureQuery { width, height, .. } = text_tex.query();
+        let TextureQuery {
+            width: t_width,
+            height: t_height,
+            ..
+        } = text_tex.query();
         let x_ = if x == POS_CENTERED {
-            i32::try_from((800 - width) / 2).unwrap()
+            i32::try_from((width - t_width) / 2).unwrap()
         } else {
             x
-        };
+        } + offset_x;
         let y_ = if y == POS_CENTERED {
-            i32::try_from((600 - height) / 2).unwrap()
+            i32::try_from((height - t_height) / 2).unwrap()
         } else {
             y
-        };
+        } + offset_y;
 
         Text {
             text: text.to_string(),
             prev_text: text.to_string(),
             text_tex,
-            text_rect: Rect::new(x_, y_ + 16 / 4, width, height),
+            text_rect: Rect::new(x_, y_ + 16 / 4, t_width, t_height),
         }
     }
 

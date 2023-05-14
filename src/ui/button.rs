@@ -25,22 +25,26 @@ impl Button<'_> {
     pub fn new<'a>(
         x: i32,
         y: i32,
+        offset_x: i32,
+        offset_y: i32,
         w: i32,
         scale: i32,
         tex_creator: &'a TextureCreator<WindowContext>,
         text: &str,
         font: &Font,
+        width: i32,
+        height: i32,
     ) -> Button<'a> {
         let x_ = if x == POS_CENTERED {
-            ((800 - w * scale) / 2) as _
+            ((width - w * scale) / 2) as _
         } else {
             x
-        };
+        } + offset_x;
         let y_ = if y == POS_CENTERED {
-            ((600 - 16 * scale) / 2) as _
+            ((height - 16 * scale) / 2) as _
         } else {
             y
-        };
+        } + offset_y;
         let text_surf = font
             .render(text)
             .blended(Color::WHITE)
@@ -48,8 +52,12 @@ impl Button<'_> {
         let text_tex = tex_creator
             .create_texture_from_surface(&text_surf)
             .expect("Could not get text texture");
-        let TextureQuery { width, height, .. } = text_tex.query();
-        let text_width = i32::try_from(width).unwrap();
+        let TextureQuery {
+            width: t_width,
+            height: t_height,
+            ..
+        } = text_tex.query();
+        let text_width = i32::try_from(t_width).unwrap();
         Button {
             x: x_,
             y: y_,
@@ -62,8 +70,8 @@ impl Button<'_> {
             text_rect: Rect::new(
                 x_ + (w * scale - text_width) / 2,
                 y_ + (16 * scale) / 4,
-                width,
-                height,
+                t_width,
+                t_height,
             ),
         }
     }

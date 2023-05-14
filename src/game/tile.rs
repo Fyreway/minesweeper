@@ -67,10 +67,20 @@ impl Tile {
         tex: &Texture,
         x: i32,
         y: i32,
+        hidden: bool,
     ) -> Result<(), String> {
+        let mut rect = self.rect;
+        if !hidden {
+            if self.is_flagged && !self.is_mine {
+                rect.x = 48;
+            } else if self.is_mine && self.is_mined {
+                rect.x = 32;
+                rect.y = 16;
+            }
+        }
         canvas.copy(
             tex,
-            self.rect,
+            rect,
             Rect::new(x, y, TILE_SIZE as u32, TILE_SIZE as u32),
         )
     }
