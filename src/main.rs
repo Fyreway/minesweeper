@@ -99,7 +99,7 @@ fn run() -> Result<bool, String> {
         }
 
         ctx.canvas.clear();
-        map.render(&mut ctx.canvas, &font, &ctx.tex_creator, true)?;
+        map.render(&mut ctx.canvas, &font, &ctx.tex_creator, None)?;
         ctx.canvas.present();
 
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));

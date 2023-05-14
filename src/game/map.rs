@@ -244,7 +244,7 @@ impl<'a> Map<'a> {
         canvas: &mut WindowCanvas,
         font: &Font,
         tex_creator: &'a TextureCreator<WindowContext>,
-        hidden: bool,
+        status: Option<bool>,
     ) -> Result<(), String> {
         for (i, row) in self.map.iter().enumerate() {
             for (j, tile) in row.iter().enumerate() {
@@ -253,12 +253,12 @@ impl<'a> Map<'a> {
                     &self.spritesheet,
                     i32::try_from(i).unwrap() * TILE_SIZE,
                     i32::try_from(j).unwrap() * TILE_SIZE,
-                    hidden,
+                    status,
                 )?;
             }
         }
 
-        if hidden {
+        if status.is_none() {
             self.flags_text.render(canvas, font, tex_creator)?;
             self.time_text
                 .set_text(&format!("Time: {}", self.stopwatch.elapsed().as_secs()));

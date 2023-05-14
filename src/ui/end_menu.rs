@@ -105,7 +105,7 @@ pub fn end_menu<'a>(
         ))?;
         canvas.set_draw_color(Color::RGB(28, 28, 28));
 
-        map.render(canvas, &font, tex_creator, false)?;
+        map.render(canvas, &font, tex_creator, Some(state == &Stage::Win))?;
 
         end_menu.render(canvas, &font, tex_creator)?;
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
