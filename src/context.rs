@@ -1,3 +1,4 @@
+use resource::{resource, Resource};
 use sdl2::{
     image::{self, InitFlag, Sdl2ImageContext},
     render::{TextureCreator, WindowCanvas},
@@ -14,6 +15,7 @@ pub struct Context {
     pub canvas: WindowCanvas,
     pub tex_creator: TextureCreator<WindowContext>,
     pub event_pump: EventPump,
+    pub font_res: Resource<[u8]>,
 }
 
 impl Context {
@@ -44,6 +46,7 @@ impl Context {
             canvas,
             tex_creator,
             event_pump,
+            font_res: resource!("res/font/opensans.ttf"),
         })
     }
 }

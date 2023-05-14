@@ -43,13 +43,13 @@ impl Button<'_> {
         };
         let text_surf = font
             .render(text)
-            .solid(Color::WHITE)
+            .blended(Color::WHITE)
             .expect("Could not get text surface");
         let text_tex = tex_creator
             .create_texture_from_surface(&text_surf)
             .expect("Could not get text texture");
         let TextureQuery { width, height, .. } = text_tex.query();
-        let text_width = i32::try_from(width).unwrap() * 8 * scale / i32::try_from(height).unwrap();
+        let text_width = i32::try_from(width).unwrap();
         Button {
             x: x_,
             y: y_,
@@ -62,8 +62,8 @@ impl Button<'_> {
             text_rect: Rect::new(
                 x_ + (w * scale - text_width) / 2,
                 y_ + (16 * scale) / 4,
-                u32::try_from(text_width).unwrap(),
-                u32::try_from(16 * scale / 2).unwrap(),
+                width,
+                height,
             ),
         }
     }

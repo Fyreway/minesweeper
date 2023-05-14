@@ -61,7 +61,7 @@ impl<'a> Map<'a> {
             first_move: true,
             mines,
             flags: mines,
-            flags_text: Text::new(0, -10, 3, tex_creator, &format!("Flags: {mines}"), font),
+            flags_text: Text::new(0, 0, tex_creator, &format!("Flags: {mines}"), font),
         }
     }
 

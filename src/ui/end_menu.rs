@@ -1,13 +1,13 @@
 use std::time::Duration;
 
-use resource::resource;
+use resource::Resource;
 
 use sdl2::{
     event::Event,
     mouse::MouseButton,
     render::{TextureCreator, WindowCanvas},
     rwops::RWops,
-    ttf::{FontStyle, Sdl2TtfContext},
+    ttf::Sdl2TtfContext,
     video::WindowContext,
     EventPump,
 };
@@ -49,27 +49,19 @@ pub fn end_menu(
     ttf: &Sdl2TtfContext,
     event_pump: &mut EventPump,
     canvas: &mut WindowCanvas,
+    font_res: &Resource<[u8]>,
 ) -> Result<Option<ClickStatus>, String> {
-    let res = resource!("res/font/opensans.ttf");
-    let small_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
-    let mut title_font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 500)?;
-    title_font.set_style(FontStyle::BOLD);
+    let font = ttf.load_font_from_rwops(RWops::from_bytes(font_res)?, 40)?;
     let mut end_menu = Menu::<EndMenuHandler>::new(
         buttons![
-            {
-                scale: 5,
-                tex_creator: tex_creator,
-                font: &small_font
-            }:
-            (POS_CENTERED, 300, 64) : "Menu",
-            (POS_CENTERED, 400, 64) : "Exit"
+            { 5, tex_creator, ttf, font_res }:
+            (POS_CENTERED, 300, 64, 7) : "Menu",
+            (POS_CENTERED, 400, 64, 7) : "Exit"
         ],
         texts![
-            {
-                tex_creator: tex_creator,
-                font: &title_font
-            }:
-            (POS_CENTERED, 50, 15) : if let Stage::Lose = state {"You Lose!"} else {"You Win!"}
+            { tex_creator, ttf, font_res }:
+            (POS_CENTERED, 50, 50) : if let Stage::Lose = state {"You Lose!"} else {"You Win!"},
+            (5, 460, 20) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
         ],
         (800, 500),
     );
@@ -92,7 +84,7 @@ pub fn end_menu(
             }
         }
 
-        end_menu.render(canvas, &small_font, tex_creator)?;
+        end_menu.render(canvas, &font, tex_creator)?;
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }
 

@@ -21,14 +21,16 @@ mod ui;
 
 fn run() -> Result<bool, String> {
     let mut ctx = Context::new()?;
-    let res = resource!("res/font/opensans.ttf");
-    let font = ctx.ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
+    let font = ctx
+        .ttf
+        .load_font_from_rwops(RWops::from_bytes(&ctx.font_res)?, 15)?;
     let mut map;
     if let Some(status) = main_menu(
         &ctx.tex_creator,
         &ctx.ttf,
         &mut ctx.event_pump,
         &mut ctx.canvas,
+        &ctx.font_res,
     )? {
         match status {
             main_menu::ClickStatus::Small => {
@@ -111,6 +113,7 @@ fn run() -> Result<bool, String> {
         &ctx.ttf,
         &mut ctx.event_pump,
         &mut ctx.canvas,
+        &ctx.font_res,
     )? {
         match status {
             end_menu::ClickStatus::Menu => return Ok(false),

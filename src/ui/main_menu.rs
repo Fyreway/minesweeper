@@ -1,4 +1,4 @@
-use resource::resource;
+use resource::{resource, Resource};
 
 use sdl2::{
     event::Event,
@@ -51,28 +51,22 @@ pub fn main_menu(
     ttf: &Sdl2TtfContext,
     event_pump: &mut EventPump,
     canvas: &mut WindowCanvas,
+    font_res: &Resource<[u8]>,
 ) -> Result<Option<ClickStatus>, String> {
     let res = resource!("res/font/opensans.ttf");
-    let font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 40)?;
+    let font = ttf.load_font_from_rwops(RWops::from_bytes(&res)?, 50)?;
     let mut main_menu = Menu::<MainMenuHandler>::new(
         buttons![
-            {
-                scale: 5,
-                tex_creator: tex_creator,
-                font: &font
-            }:
-            (POS_CENTERED, 300, 64) : "Small",
-            (POS_CENTERED, 400, 64) : "Normal",
-            (POS_CENTERED, 500, 64) : "Large"
+            { 5, tex_creator, ttf, font_res }:
+            (POS_CENTERED, 300, 64, 7) : "Small",
+            (POS_CENTERED, 400, 64, 7) : "Normal",
+            (POS_CENTERED, 500, 64, 7) : "Large"
             // (POS_CENTERED, 600, 64) : "Custom"
         ],
         texts![
-            {
-                tex_creator: tex_creator,
-                font: &font
-            }:
-            (POS_CENTERED, 50, 15) : "MINESWEEPER",
-            (5, 552, 3) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
+            { tex_creator, ttf, font_res }:
+            (POS_CENTERED, 50, 90) : "MINESWEEPER",
+            (5, 560, 20) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
         ],
         (800, 600),
     );

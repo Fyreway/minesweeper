@@ -8,11 +8,11 @@ use super::{button::Button, text::Text};
 
 #[macro_export]
 macro_rules! buttons {
-    [{scale: $scale:expr, tex_creator: $tex_creator:expr, font: $font:expr}: $( ($x:expr, $y:expr, $w:expr) : $text:expr ),*] => {
+    [{$scale:expr, $tex_creator:expr, $ttf:expr, $res:expr}: $( ($x:expr, $y:expr, $w:expr, $size:expr) : $text:expr ),*] => {
         {
             vec![
                 $(
-                    Button::new($x, $y, $w, $scale, $tex_creator, $text, $font)
+                    Button::new($x, $y, $w, $scale, $tex_creator, $text, &$ttf.load_font_from_rwops(RWops::from_bytes(&$res)?, $size * $scale)?)
                 ),*
             ]
         }
@@ -21,11 +21,11 @@ macro_rules! buttons {
 
 #[macro_export]
 macro_rules! texts {
-    [{tex_creator: $tex_creator:expr, font: $font:expr}: $( ($x:expr, $y:expr, $scale:expr) : $text:expr ),*] => {
+    [{$tex_creator:expr, $ttf:expr, $res:expr}: $( ($x:expr, $y:expr, $size:expr) : $text:expr ),*] => {
         {
             vec![
                 $(
-                    Text::new($x, $y, $scale, $tex_creator, $text, $font)
+                    Text::new($x, $y, $tex_creator, $text, &$ttf.load_font_from_rwops(RWops::from_bytes(&$res)?, $size)?)
                 ),*
             ]
         }

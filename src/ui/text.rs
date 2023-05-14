@@ -19,27 +19,25 @@ impl<'a> Text<'a> {
     pub fn new<'b>(
         x: i32,
         y: i32,
-        scale: i32,
         tex_creator: &'b TextureCreator<WindowContext>,
         text: &str,
         font: &Font,
     ) -> Text<'b> {
         let text_surf = font
             .render(text)
-            .solid(Color::WHITE)
+            .blended(Color::WHITE)
             .expect("Could not get text surface");
         let text_tex = tex_creator
             .create_texture_from_surface(&text_surf)
             .expect("Could not get text texture");
         let TextureQuery { width, height, .. } = text_tex.query();
-        let text_width = i32::try_from(width).unwrap() * 8 * scale / i32::try_from(height).unwrap();
         let x_ = if x == POS_CENTERED {
-            ((800 - text_width) / 2) as _
+            i32::try_from((800 - width) / 2).unwrap()
         } else {
             x
         };
         let y_ = if y == POS_CENTERED {
-            ((600 - 16 * scale) / 2) as _
+            i32::try_from((600 - height) / 2).unwrap()
         } else {
             y
         };
@@ -48,12 +46,7 @@ impl<'a> Text<'a> {
             text: text.to_string(),
             prev_text: text.to_string(),
             text_tex,
-            text_rect: Rect::new(
-                x_,
-                y_ + (16 * scale) / 4,
-                u32::try_from(text_width).unwrap(),
-                u32::try_from(16 * scale / 2).unwrap(),
-            ),
+            text_rect: Rect::new(x_, y_ + 16 / 4, width, height),
         }
     }
 
