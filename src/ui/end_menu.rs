@@ -50,6 +50,7 @@ pub fn end_menu(
     event_pump: &mut EventPump,
     canvas: &mut WindowCanvas,
     font_res: &Resource<[u8]>,
+    time: u64,
 ) -> Result<Option<ClickStatus>, String> {
     let font = ttf.load_font_from_rwops(RWops::from_bytes(font_res)?, 40)?;
     let mut end_menu = Menu::<EndMenuHandler>::new(
@@ -61,6 +62,7 @@ pub fn end_menu(
         texts![
             { tex_creator, ttf, font_res }:
             (POS_CENTERED, 50, 50) : if let Stage::Lose = state {"You Lose!"} else {"You Win!"},
+            (POS_CENTERED, 200, 20) : &format!("Time: {time}"),
             (5, 460, 20) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
         ],
         (800, 500),

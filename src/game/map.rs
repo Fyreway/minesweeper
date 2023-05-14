@@ -4,6 +4,7 @@ use sdl2::{
     ttf::Font,
     video::WindowContext,
 };
+use stopwatch::Stopwatch;
 
 use crate::ui::text::Text;
 
@@ -26,6 +27,8 @@ pub struct Map<'a> {
     mines: u8,
     flags: u8,
     flags_text: Text<'a>,
+    time_text: Text<'a>,
+    pub stopwatch: Stopwatch,
 }
 
 impl<'a> Map<'a> {
@@ -62,6 +65,19 @@ impl<'a> Map<'a> {
             mines,
             flags: mines,
             flags_text: Text::new(0, 0, tex_creator, &format!("Flags: {mines}"), font),
+            time_text: Text::new(
+                0,
+                match size {
+                    Size::Small => 9,
+                    Size::Normal => 16,
+                    Size::Large => 18,
+                } * TILE_SIZE
+                    - 30,
+                tex_creator,
+                "Time: 0",
+                font,
+            ),
+            stopwatch: Stopwatch::new(),
         }
     }
 
@@ -221,7 +237,14 @@ impl<'a> Map<'a> {
             }
         }
 
-        self.flags_text.render(canvas, font, tex_creator)
+        self.flags_text.render(canvas, font, tex_creator)?;
+
+        self.time_text
+            .set_text(&format!("Time: {}", self.stopwatch.elapsed().as_secs()));
+
+        self.time_text.render(canvas, font, tex_creator)?;
+
+        Ok(())
     }
 
     pub fn inside(&self, x: i32, y: i32) -> Option<Coords<i32>> {

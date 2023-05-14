@@ -75,6 +75,7 @@ fn run() -> Result<bool, String> {
                             if map.first_move {
                                 map.generate_mines(&mut rand::thread_rng(), tile.0, tile.1);
                                 map.generate_tiles();
+                                map.stopwatch.start();
                                 map.first_move = false;
                             }
                             map.mine(tile, &mut Vec::new());
@@ -107,6 +108,7 @@ fn run() -> Result<bool, String> {
         std::thread::sleep(Duration::from_nanos(1_000_000_000u64 / 60));
     }
 
+    map.stopwatch.stop();
     if let Some(status) = end_menu(
         &state,
         &ctx.tex_creator,
@@ -114,6 +116,7 @@ fn run() -> Result<bool, String> {
         &mut ctx.event_pump,
         &mut ctx.canvas,
         &ctx.font_res,
+        map.stopwatch.elapsed().as_secs(),
     )? {
         match status {
             end_menu::ClickStatus::Menu => return Ok(false),
