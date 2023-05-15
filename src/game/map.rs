@@ -15,13 +15,26 @@ use super::{
     Coords, Stage,
 };
 
+#[derive(Clone, Copy)]
 pub enum Size {
     Small,
     Normal,
     Large,
 }
 
+impl ToString for Size {
+    fn to_string(&self) -> String {
+        match *self {
+            Self::Small => "Small",
+            Self::Normal => "Normal",
+            Self::Large => "Large",
+        }
+        .to_string()
+    }
+}
+
 pub struct Map<'a> {
+    pub size: Size,
     pub dim: Coords<i32>,
     map: Vec<Vec<Tile>>,
     lost: bool,
@@ -36,7 +49,7 @@ pub struct Map<'a> {
 
 impl<'a> Map<'a> {
     pub fn new(
-        size: &Size,
+        size: Size,
         tex_creator: &'a TextureCreator<WindowContext>,
         font: &'a Font,
     ) -> Map<'a> {
@@ -51,6 +64,7 @@ impl<'a> Map<'a> {
             Size::Large => 99,
         };
         Map {
+            size,
             dim,
             map: {
                 let mut map = vec![];
@@ -148,8 +162,7 @@ impl<'a> Map<'a> {
                 rand_col = rng.gen_range(0..self.dim.0);
                 rand_row = rng.gen_range(0..self.dim.1);
                 if !(self.get((rand_col, rand_row)).unwrap().is_mine
-                    || (x - rand_col).abs() < 2
-                    || (y - rand_row).abs() < 2)
+                    || ((x - rand_col).abs() < 2 && (y - rand_row).abs() < 2))
                 {
                     break;
                 }

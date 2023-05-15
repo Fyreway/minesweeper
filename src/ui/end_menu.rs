@@ -30,6 +30,7 @@ use super::{
 pub enum ClickStatus {
     Menu,
     Exit,
+    PlayAgain,
 }
 
 #[derive(Default)]
@@ -43,6 +44,8 @@ impl ClickHandler for EndMenuHandler {
             Some(ClickStatus::Menu)
         } else if btns[1].inside(x, y) {
             Some(ClickStatus::Exit)
+        } else if btns[2].inside(x, y) {
+            Some(ClickStatus::PlayAgain)
         } else {
             None
         }
@@ -65,15 +68,16 @@ pub fn end_menu<'a>(
         buttons![
             { 5, tex_creator, ttf, font_res, map_width, 0, 400, 500 }:
             (POS_CENTERED, 300, 64, 7) : "Menu",
-            (POS_CENTERED, 400, 64, 7) : "Exit"
+            (POS_CENTERED, 400, 64, 7) : "Exit",
+            (POS_CENTERED, 500, 64, 5) : &format!("Play {} Again", map.size.to_string())
         ],
         texts![
             { tex_creator, ttf, font_res, map_width, 0, 400, 500 }:
             (POS_CENTERED, 50, 50) : if let Stage::Lose = state {"You Lose!"} else {"You Win!"},
             (POS_CENTERED, 200, 20) : &format!("Time: {}", map.stopwatch.elapsed().as_secs()),
-            (5, 510, 20) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
+            (5, 610, 20) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
         ],
-        (400 + u32::try_from(map_width).unwrap(), 550),
+        (400 + u32::try_from(map_width).unwrap(), 650),
     );
 
     loop {

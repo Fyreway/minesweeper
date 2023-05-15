@@ -19,51 +19,53 @@ mod game;
 mod stopwatch;
 mod ui;
 
-fn run() -> Result<bool, String> {
+enum RunStatus {
+    Menu,
+    Exit,
+    PlayAgain(Size),
+}
+
+fn run(again: Option<Size>) -> Result<RunStatus, String> {
     let mut ctx = Context::new()?;
     let font = ctx
         .ttf
         .load_font_from_rwops(RWops::from_bytes(&ctx.font_res)?, 15)?;
     let mut map;
-    if let Some(status) = main_menu(
+    if let Some(size) = again {
+        map = Map::new(size, &ctx.tex_creator, &font);
+    } else if let Some(status) = main_menu(
         &ctx.tex_creator,
         &ctx.ttf,
         &mut ctx.event_pump,
         &mut ctx.canvas,
         &ctx.font_res,
     )? {
-        match status {
-            main_menu::ClickStatus::Small => {
-                map = Map::new(&Size::Small, &ctx.tex_creator, &font);
-                let win = ctx.canvas.window_mut();
-                win.set_size(9 * TILE_SIZE as u32, 9 * TILE_SIZE as u32)
-                    .map_err(|e| e.to_string())?;
-                win.set_position(WindowPos::Centered, WindowPos::Centered);
-            }
-            main_menu::ClickStatus::Normal => {
-                map = Map::new(&Size::Normal, &ctx.tex_creator, &font);
-                let win = ctx.canvas.window_mut();
-                win.set_size(16 * TILE_SIZE as u32, 16 * TILE_SIZE as u32)
-                    .map_err(|e| e.to_string())?;
-                win.set_position(WindowPos::Centered, WindowPos::Centered);
-            }
-            main_menu::ClickStatus::Large => {
-                map = Map::new(&Size::Large, &ctx.tex_creator, &font);
-                let win = ctx.canvas.window_mut();
-                win.set_size(30 * TILE_SIZE as u32, 18 * TILE_SIZE as u32)
-                    .map_err(|e| e.to_string())?;
-                win.set_position(WindowPos::Centered, WindowPos::Centered);
-            }
-        }
+        map = Map::new(
+            match status {
+                main_menu::ClickStatus::Small => Size::Small,
+                main_menu::ClickStatus::Normal => Size::Normal,
+                main_menu::ClickStatus::Large => Size::Large,
+            },
+            &ctx.tex_creator,
+            &font,
+        );
     } else {
-        return Ok(true);
+        return Ok(RunStatus::Exit);
     }
+
+    let win = ctx.canvas.window_mut();
+    win.set_size(
+        u32::try_from(map.dim.1 * TILE_SIZE).unwrap(),
+        u32::try_from(map.dim.0 * TILE_SIZE).unwrap(),
+    )
+    .map_err(|e| e.to_string())?;
+    win.set_position(WindowPos::Centered, WindowPos::Centered);
 
     let mut state = Stage::Playing;
     'gameloop: loop {
         for e in ctx.event_pump.poll_iter() {
             match e {
-                Event::Quit { .. } => return Ok(true),
+                Event::Quit { .. } => return Ok(RunStatus::Exit),
                 Event::MouseButtonDown {
                     mouse_btn, x, y, ..
                 } => match mouse_btn {
@@ -116,17 +118,21 @@ fn run() -> Result<bool, String> {
         &mut map,
     )? {
         match status {
-            end_menu::ClickStatus::Menu => return Ok(false),
-            end_menu::ClickStatus::Exit => return Ok(true),
+            end_menu::ClickStatus::Menu => return Ok(RunStatus::Menu),
+            end_menu::ClickStatus::Exit => return Ok(RunStatus::Exit),
+            end_menu::ClickStatus::PlayAgain => return Ok(RunStatus::PlayAgain(map.size)),
         }
     }
-    Ok(true)
+    Ok(RunStatus::Exit)
 }
 
 fn main() -> Result<(), String> {
+    let mut again_size = None;
     loop {
-        if run()? {
-            break;
+        match run(again_size)? {
+            RunStatus::Exit => break,
+            RunStatus::Menu => again_size = None,
+            RunStatus::PlayAgain(size) => again_size = Some(size),
         }
     }
 
