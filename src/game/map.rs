@@ -45,6 +45,7 @@ pub struct Map<'a> {
     flags_text: Text<'a>,
     time_text: Text<'a>,
     pub stopwatch: Stopwatch,
+    pub percentage: u32,
 }
 
 impl<'a> Map<'a> {
@@ -112,6 +113,7 @@ impl<'a> Map<'a> {
                 u32::try_from(dim.0 * TILE_SIZE).unwrap(),
             ),
             stopwatch: Stopwatch::default(),
+            percentage: 0,
         }
     }
 
@@ -217,6 +219,18 @@ impl<'a> Map<'a> {
                 self.mine(adj, &mut copy);
             }
         }
+
+        let mut mined = 0;
+
+        for row in &self.map {
+            for tile in row {
+                if tile.is_mined || tile.is_mine {
+                    mined += 1;
+                }
+            }
+        }
+
+        self.percentage = mined * 100 / u32::try_from(self.dim.0 * self.dim.1).unwrap();
     }
 
     pub fn flag(&mut self, pos: Coords<i32>) {

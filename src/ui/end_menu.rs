@@ -74,7 +74,7 @@ pub fn end_menu<'a>(
         texts![
             { tex_creator, ttf, font_res, map_width, 0, 400, 500 }:
             (POS_CENTERED, 50, 50) : if let Stage::Lose = state {"You Lose!"} else {"You Win!"},
-            (POS_CENTERED, 200, 20) : &format!("Time: {}", map.stopwatch.elapsed().as_secs()),
+            (POS_CENTERED, 200, 20) : &format!("Time: {} | Progress: {}%", map.stopwatch.elapsed().as_secs(), map.percentage),
             (5, 610, 20) : &format!("minesweeper v{}", env!("CARGO_PKG_VERSION"))
         ],
         (400 + u32::try_from(map_width).unwrap(), 650),
