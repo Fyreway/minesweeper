@@ -8,7 +8,9 @@ use game::{
     tile::TILE_SIZE,
     Stage,
 };
-use sdl2::{event::Event, mouse::MouseButton, rwops::RWops, video::WindowPos};
+use sdl2::{
+    event::Event, keyboard::Scancode, mouse::MouseButton, rwops::RWops, video::WindowPos, EventPump,
+};
 use ui::{
     end_menu::{self, end_menu},
     main_menu::{self, main_menu},
@@ -23,6 +25,48 @@ enum RunStatus {
     Menu,
     Exit,
     PlayAgain(Size),
+}
+
+fn handle_events(event_pump: &mut EventPump, map: &mut Map) -> bool {
+    let shift_held = event_pump
+        .keyboard_state()
+        .is_scancode_pressed(Scancode::LShift)
+        || event_pump
+            .keyboard_state()
+            .is_scancode_pressed(Scancode::RShift);
+
+    for e in event_pump.poll_iter() {
+        match e {
+            Event::Quit { .. } => return true,
+            Event::MouseButtonDown {
+                mouse_btn, x, y, ..
+            } => match mouse_btn {
+                MouseButton::Left => {
+                    if let Some(tile) = map.inside(x, y) {
+                        if shift_held {
+                            map.flag(tile);
+                        } else {
+                            if map.first_move {
+                                map.generate_mines(&mut rand::thread_rng(), tile.0, tile.1);
+                                map.generate_tiles();
+                                map.stopwatch.start();
+                                map.first_move = false;
+                            }
+                            map.mine(tile, &mut Vec::new());
+                        }
+                    }
+                }
+                MouseButton::Right => {
+                    if let Some(tile) = map.inside(x, y) {
+                        map.flag(tile);
+                    }
+                }
+                _ => (),
+            },
+            _ => (),
+        }
+    }
+    false
 }
 
 fn run(again: Option<Size>) -> Result<RunStatus, String> {
@@ -61,37 +105,10 @@ fn run(again: Option<Size>) -> Result<RunStatus, String> {
     .map_err(|e| e.to_string())?;
     win.set_position(WindowPos::Centered, WindowPos::Centered);
 
-    let mut state = Stage::Playing;
+    let mut state;
     'gameloop: loop {
-        for e in ctx.event_pump.poll_iter() {
-            match e {
-                Event::Quit { .. } => return Ok(RunStatus::Exit),
-                Event::MouseButtonDown {
-                    mouse_btn, x, y, ..
-                } => match mouse_btn {
-                    MouseButton::Left => {
-                        if let Some(tile) = map.inside(x, y) {
-                            if map.first_move {
-                                map.generate_mines(&mut rand::thread_rng(), tile.0, tile.1);
-                                map.generate_tiles();
-                                map.stopwatch.start();
-                                map.first_move = false;
-                            }
-                            map.mine(tile, &mut Vec::new());
-                        }
-                    }
-                    MouseButton::Right => {
-                        if let Some(tile) = map.inside(x, y) {
-                            map.flag(tile);
-                        }
-                    }
-                    _ => (),
-                },
-                _ => (),
-            }
-            if let Event::Quit { .. } = e {
-                break 'gameloop;
-            }
+        if handle_events(&mut ctx.event_pump, &mut map) {
+            return Ok(RunStatus::Exit);
         }
 
         state = map.check_state();
