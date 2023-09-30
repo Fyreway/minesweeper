@@ -224,7 +224,7 @@ impl<'a> Map<'a> {
 
         for row in &self.map {
             for tile in row {
-                if tile.is_mined || tile.is_mine {
+                if tile.is_mined || (tile.is_mine && tile.is_flagged) {
                     mined += 1;
                 }
             }

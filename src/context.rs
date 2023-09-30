@@ -2,6 +2,8 @@ use resource::{resource, Resource};
 use sdl2::{
     image::{self, InitFlag, Sdl2ImageContext},
     render::{TextureCreator, WindowCanvas},
+    rwops::RWops,
+    surface::Surface,
     ttf::{self, Sdl2TtfContext},
     video::WindowContext,
     EventPump, Sdl, VideoSubsystem,
@@ -24,12 +26,15 @@ impl Context {
         let video_subsys = sdl.video()?;
         let image = image::init(InitFlag::PNG)?;
         let ttf = ttf::init().map_err(|e| e.to_string())?;
-        let win = video_subsys
+        let mut win = video_subsys
             .window("Minesweeper", 800, 600)
             .position_centered()
             .resizable()
             .build()
             .map_err(|e| e.to_string())?;
+        win.set_icon(Surface::load_bmp_rw(&mut RWops::from_bytes(&resource!(
+            "res/icon.png"
+        ))?)?);
         let canvas = win
             .into_canvas()
             .accelerated()
